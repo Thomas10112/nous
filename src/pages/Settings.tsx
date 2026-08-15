@@ -15,7 +15,7 @@ import Proposal from './Proposal'
 
 export default function SettingsPage() {
   const store = useStore()
-  const { settings, saveSettings, db, adapter, syncKind, syncState, notify, reload, authRequired } =
+  const { settings, saveSettings, db, adapter, syncKind, syncState, notify, reload, authRequired, user } =
     store
   const { confirm, node: confirmNode } = useConfirm()
   const [usage, setUsage] = useState<{ usage: number; quota: number } | null>(null)
@@ -318,19 +318,64 @@ export default function SettingsPage() {
               : "Elle se déclenchera à la première connexion de l'autre personne, une fois le partage activé. En attendant, l'aperçu vous la montre en entier sans rien consommer."}
         </p>
 
-          <div className="row wrap" style={{ gap: 8 }}>
-            <Button icon="sparkle" onClick={() => setPreviewProposal(true)}>
-              Voir l'aperçu
-            </Button>
-            {settings.proposal?.answeredAt && (
+        {/* Qui offre, qui reçoit. Sans ça, une configuration faite depuis
+            le mauvais compte enverrait la surprise à la mauvaise personne,
+            sans aucun moyen de le corriger. */}
+        {authRequired && user && (
+          <div
+            style={{
+              padding: 'var(--sp-4)',
+              borderRadius: 'var(--r-md)',
+              background: settings.setupBy === user.id ? 'var(--accent-soft)' : 'var(--surface-2)',
+              border: '1px solid var(--line)',
+            }}
+          >
+            <div className="settings-row__label">
+              {settings.setupBy === user.id
+                ? '🤍 C’est ce compte qui offre'
+                : '⚠️ Ce n’est pas ce compte qui offre'}
+            </div>
+            <div className="settings-row__hint" style={{ marginTop: 4 }}>
+              {settings.setupBy === user.id ? (
+                <>
+                  Vous êtes connecté en <span className="code">{user.email}</span>. La surprise
+                  attend donc la première connexion de <strong>l'autre compte</strong>. C'est ce
+                  qu'il faut.
+                </>
+              ) : (
+                <>
+                  La surprise se jouera pour <span className="code">{user.email}</span> — donc pour
+                  vous. Si c'est vous qui offrez le site, corrigez-le ci-dessous.
+                </>
+              )}
+            </div>
+
+            {settings.setupBy !== user.id && (
               <Button
-                variant="ghost"
-                icon="undo"
-                onClick={() => void saveSettings({ proposal: undefined })}
+                variant="primary"
+                icon="heart"
+                onClick={() => void saveSettings({ setupBy: user.id, proposal: undefined })}
+                style={{ marginTop: 'var(--sp-3)' }}
               >
-                La remettre en jeu
+                C'est moi qui offre
               </Button>
             )}
+          </div>
+        )}
+
+        <div className="row wrap" style={{ gap: 8 }}>
+          <Button icon="sparkle" onClick={() => setPreviewProposal(true)}>
+            Voir l'aperçu
+          </Button>
+          {settings.proposal?.answeredAt && (
+            <Button
+              variant="ghost"
+              icon="undo"
+              onClick={() => void saveSettings({ proposal: undefined })}
+            >
+              La remettre en jeu
+            </Button>
+          )}
         </div>
       </section>
 
