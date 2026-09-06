@@ -177,6 +177,14 @@ EAS opérationnels ; projet Supabase joignable ; les deux `auth.uid()` connus ; 
 
 **Effort.** 10–12 jours (dont le spike).
 
+**État au 06/09/2026.** Stack tranchée sur dossier ([01](01-stack.md), ADR-001) ; projet
+Supabase restauré et données réelles mesurées ([08](08-mesures-phase1.md) : 10 lignes,
+4,4 Ko, 2 photos, les deux `auth.uid()` relevés) ; spike écrit et typé dans
+[`spike/week-grid/`](../spike/week-grid/README.md) (palette bleue et couleurs réelles du
+couple). **Reste** : compte Apple Developer, appareils (T10), Mac (T11), build EAS du spike
+sur les deux téléphones et leur verdict — la porte de décision n'est pas franchie tant que
+ce verdict n'est pas écrit dans l'ADR-001.
+
 ---
 
 ### Phase 2 — Architecture générale et monorepo

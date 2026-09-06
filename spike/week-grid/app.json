@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Nous — spike",
+    "slug": "nous-spike",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "nous-spike",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#faf6f2",
+    "ios": {
+      "bundleIdentifier": "app.nous.spike",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "app.nous.spike",
+      "adaptiveIcon": {
+        "backgroundColor": "#faf6f2",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": ["expo-dev-client"]
+  }
+}
