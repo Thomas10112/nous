@@ -250,7 +250,7 @@ soient dans le tiers bas ; aucun push dans l'onglet Calendrier.
 
 | Web                              | Mobile                                                       |
 | -------------------------------- | ------------------------------------------------------------ |
-| `backdrop-filter: blur()`        | `expo-blur` pour la tabbar et le fond des sheets              |
+| `backdrop-filter: blur()`        | iOS : `expo-blur` (tabbar, fond des sheets). **Android** : fond de sheet crème semi-opaque (≈ 92 %) sans flou (`expo-blur` ne traverse pas une frontière `Modal`) ; tabbar avec `experimentalBlurMethod="dimezisBlurViewSdk31Plus"`, repli opaque sous API 31. Vérifié dans la galerie de la Phase 6 sur l'Android du couple. |
 | grain `feTurbulence` SVG         | tuile PNG 160 px, `effects.grain`                            |
 | `color-mix()`                    | `glass.*` pré-calculés                                       |
 | `font-variation-settings`        | instances statiques de Fraunces (`expo-font`) — les axes `SOFT/WONK` sont déjà inertes sur le web |

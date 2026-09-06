@@ -28,8 +28,9 @@ même contrôle, on change l'implémentation de `Sheet` seulement.
 
 ## Conséquences
 
-- Une dépendance de plus, bien maintenue ; **épingler ≥ 5.1.8**, première version
-  compatible Reanimated 4 (les 5.1.x antérieures ne s'ouvrent pas avec Reanimated 4).
+- Une dépendance de plus, bien maintenue ; **épingler `^5.2.14`** (≥ 5.1.8 pour
+  Reanimated 4, ≥ 5.2.9 pour React 19 — `findNodeHandle`). Le choix tient au **contrôle
+  du style**, pas à la maturité : le `BottomSheet` de `@expo/ui` est stable depuis SDK 56.
 - Les routes modales d'Expo Router (`sheets/*`) rendent un `Sheet` : navigation et sheet
   restent cohérentes (retour matériel Android = fermer la sheet).
 - Garde « modifications non enregistrées » implémentée une fois dans `FormSheet`.

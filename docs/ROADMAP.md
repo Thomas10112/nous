@@ -90,9 +90,15 @@ flowchart LR
    data)` lu par le web n'est jamais altéré.
 6. **Deux téléphones réels** (un iPhone, un Android — modèles fixés en Phase 1, T10) :
    la Phase 4 est vérifiée en mode avion ; chaque phase ≥ 5 est vérifiée sur les deux
-   téléphones, en mode avion puis en ligne, au **protocole deux téléphones** de la Phase 5.
-7. **L'usage réel par le couple** (« une semaine sans perte ») est un *soak* en parallèle,
-   jamais le critère bloquant : le critère est le scénario automatisé.
+   téléphones, en mode avion puis en ligne, au **protocole deux téléphones** de la Phase 5 —
+   **Android automatisé (Maestro), iPhone par check-list manuelle** (`maestro/MANUAL-IOS.md`)
+   tant qu'il n'y a pas de Mac : Maestro ne pilote pas d'iPhone physique.
+7. **Budget de builds** : le plan EAS gratuit donne 15 builds iOS et 15 Android par mois.
+   Un build de développement n'est refait que lorsqu'une dépendance native change ; le
+   JavaScript passe par le serveur de développement ou EAS Update.
+8. **L'usage réel par le couple** (« une semaine sans perte ») est un *soak* en parallèle,
+   jamais le critère bloquant : le critère est le scénario automatisé (ou la check-list
+   iOS jouée et signée).
 
 ## 2. Structure cible du dépôt
 
@@ -187,16 +193,21 @@ pas, et que l'app se connecte à Supabase sur les deux téléphones.
   `import/no-restricted-paths`, règle motion), `.prettierrc`,
   `.github/workflows/{ci,keep-alive}.yml`.
 - `apps/web/**` ← `git mv` ; `supabase/legacy/{schema,auth}.sql`.
-- `apps/mobile/` ← `create-expo-app` (SDK courant épinglé — 57 en septembre 2026 —, Expo
-  Router, TypeScript), `app.config.ts` (scheme `nous`, bundle ids, plugins, lecture de
-  `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` par profil), `eas.json`
-  (`development` / `preview` / `production`).
+- `apps/mobile/` ← `create-expo-app` avec **`expo@^57.0.17`** (RN ≥ 0.86.3 : les versions
+  antérieures, SDK 56 compris, portent une régression mémoire Hermes V1 sur les worklets
+  — le cœur du calendrier), Expo Router, TypeScript ; `app.config.ts` (scheme `nous`,
+  bundle ids, plugins, lecture de `EXPO_PUBLIC_SUPABASE_URL` /
+  `EXPO_PUBLIC_SUPABASE_ANON_KEY` par profil), `eas.json` (`development` / `preview` /
+  `production`) ; `.npmrc` racine `node-linker=hoisted` ; `pnpm.overrides` garantissant
+  une seule copie de `react`, `react-native`, `react-native-reanimated`,
+  `react-native-worklets`, `react-native-nitro-modules` ; assertion de version en CI.
 - `packages/domain/src/{dates,utils}/` ← extraction et **correction** de `lib/date.ts`
   (D7, D8) et `lib/utils.ts`, tests de caractérisation avant, tests après.
-- `packages/data/src/supabase/client.ts` (client RN : storage de session injecté),
-  `packages/data/src/auth/{nickname.ts,session.ts,AuthClient.ts,LargeSecureStore.ts}`
-  (clé AES dans `expo-secure-store`, session chiffrée dans MMKV — SecureStore plafonne à
-  2 Ko par valeur).
+- `packages/data/src/supabase/client.ts` (client RN : storage de session injecté,
+  `AppState` → `auth.startAutoRefresh()` / `stopAutoRefresh()` comme l'exige la doc
+  Supabase pour React Native), `packages/data/src/auth/{nickname.ts,session.ts,AuthClient.ts,LargeSecureStore.ts}`
+  (clé AES-256 générée par `expo-crypto` et gardée dans `expo-secure-store`, session
+  chiffrée stockée dans `expo-sqlite/kv-store` — SecureStore plafonne à 2 Ko par valeur).
 - `packages/theme/src/tokens.ts` + `scripts/generate-css.ts` + **test de parité** (parse
   postcss de l'ancien et du nouveau `tokens.css`, égalité des propriétés par palette ×
   schéma ; `--sidebar-w`/`--header-h` dans `apps/web/src/styles/layout-tokens.css`).
@@ -213,6 +224,10 @@ pas, et que l'app se connecte à Supabase sur les deux téléphones.
 `tokens.css` ; `pnpm web:build` ; `expo doctor` ; **une session de 6 Ko persiste et
 survit à un redémarrage à froid** sur iOS et Android ; connexion réussie sur les deux
 téléphones avec thème et polices.
+
+`keep-alive.yml` : `GET /rest/v1/items?select=id&limit=1` avec la clé publique toutes
+les 6 h — une requête qui **touche une table** (un ping de santé ne compte pas comme
+activité) — et une alerte si le workflow échoue.
 
 **Fini quand** : CI verte, web identique, app connectée, `keep-alive` actif.
 
@@ -242,7 +257,7 @@ SQLite, Postgres), l'**identité du couple installée en production**, sans UI.
   `0004_memories_media.sql` (trigger `coalesce(storage_path)`), `0005_habits.sql` (`done`
   absorbant), `0006_messaging.sql` (messages immuables, réactions, lectures),
   `0007_notifications.sql`, `0008_history_trash.sql` (change_log plafonné,
-  `purge_trash()`, `storage_purge_queue`), `0009_sync.sql` (broadcast, policies
+  `purge_trash()`, `storage_purge_queue`, `cron.schedule` quotidien), `0009_sync.sql` (broadcast, policies
   `realtime.messages`), `0010_legacy_items.sql` (policy `space = legacy_space`, index —
   rien d'autre).
 - `supabase/tests/*.sql` (pgTAP) ; `supabase/seed/dev.sql` : **deux couples, quatre comptes**.
@@ -280,8 +295,8 @@ vrai** (après sauvegarde JSON) : les deux comptes ont un siège et voient leurs
 
 - `packages/data/src/db/{open.ts (nous-{uid}.db),migrate.ts,events.ts}`,
   `outbox/{Outbox.ts,types.ts}` (delete + insert nouveau `seq`, ack par `(row_id, seq)`),
-  `sync/state.ts` (`sync_state` en SQLite), `kv/` (MMKV : `device_id`, préférences,
-  `slotZoom`, pins, `serverOffset` — **pas de curseur**), `search/fts.ts` (colonnes de
+  `sync/state.ts` (`sync_state` en SQLite), `kv/` (`expo-sqlite/kv-store` : `device_id`,
+  préférences, `slotZoom`, pins, `serverOffset` — **pas de curseur**), `search/fts.ts` (colonnes de
   [04 §4.1](04-sync-offline.md)), `media/LocalMediaStore.ts`.
 - `apps/mobile/src/providers/{DataProvider,QueryProvider}.tsx`, hooks génériques,
   `app/dev/data.tsx` (compteurs, outbox, export JSON, purge locale).
@@ -459,7 +474,7 @@ l'accueil juste à minuit ; notification locale J-1 reçue en mode avion.
 
 ### Phase 11 — Souvenirs et médias
 
-**Fichiers.** `packages/data/src/media/{MediaPipeline,compress,thumbnails,MediaUploader (TUS),signedUrls}.ts`,
+**Fichiers.** `packages/data/src/media/{MediaPipeline,compress (react-native-compressor ≥ 2.0.3, maxUploadBytes = 50 Mo en gratuit),thumbnails (expo-video generateThumbnailsAsync),MediaUploader (TUS),signedUrls}.ts`,
 `packages/domain/src/services/memories.ts` (depuis « + », une date, un événement, une
 occurrence / un chapitre = souvenir lié) ;
 `features/memories/{ui/MemorySheet,ui/MediaPicker,ui/MediaGrid,ui/MemoryCard,ui/MemoryStamp,ui/UploadQueue,screen/GalleryScreen}.tsx` ;
@@ -525,7 +540,7 @@ loupe sur `HomeScreen` ; `app/settings/stats.tsx` ; réglage `statsHidden`.
 **Fichiers.** `packages/data/src/presence/{PresenceClient,heartbeat}.ts` (Realtime
 Presence + `touch_presence()`), `domain/presence/{status,activity}.ts`,
 `services/messages.ts` ;
-`features/messages/{ui/MessageList (FlashList inversée),ui/MessageBubble,ui/ReactionBar,ui/Composer,ui/UnreadDivider,screen/MessagesScreen}.tsx` ;
+`features/messages/{ui/MessageList (FlashList v2 : maintainVisibleContentPosition { startRenderingFromBottom, autoscrollToBottomThreshold: 0.2 } — pas de prop inverted),ui/MessageBubble,ui/ReactionBar,ui/Composer,ui/UnreadDivider,screen/MessagesScreen}.tsx` ;
 `features/presence/{store.ts,ui/PresenceBadge,ui/ActivityBubble,ui/QuickMessageButton,hooks/useReportScreen}.ts` ;
 `PresenceBadge` dans l'en-tête de tous les onglets ; badge non-lus sur l'onglet.
 
@@ -541,6 +556,11 @@ sur `ReactionBar`.
 ---
 
 ### Phase 15 — Notifications push
+
+**Prérequis** (T12) : projet Firebase gratuit (`google-services.json` hors git, injecté par
+secret EAS ; clé de compte de service FCM V1 téléversée dans `eas credentials`), clé APNs
+(créée par EAS avec le compte Apple), secret `EXPO_ACCESS_TOKEN` pour la fonction Edge.
+Expo Push Service masque l'envoi, pas les identifiants.
 
 **Fichiers.** `supabase/migrations/0011_notification_triggers.sql` (insertion sur message,
 proposition, réponse, habitude faite, photos ajoutées à une occurrence ; respect des
@@ -560,13 +580,16 @@ respectées ; « Mimi a fait l'habitude » annule la relance locale de l'autre.
 
 ### Phase 16 — Widgets iOS / Android
 
-**Fichiers.** `apps/mobile/src/native/WidgetBridge.ts` + module Expo `widget-bridge/`
-(snapshot + image 512 px dans App Group / stockage partagé, rafraîchissement) ;
-**deux jours de prototype `expo-widgets`** (`widgets/ios/CountdownWidget.tsx`) : si photo
-locale + compte à rebours s'affichent dans les trois tailles, c'est l'implémentation
-retenue ; sinon `apps/mobile/targets/nous-widget/` (Swift WidgetKit, `@bacons/apple-targets`) ;
-`widgets/android/CountdownWidget.tsx` (`react-native-android-widget`) ;
-`features/countdowns/ui/WidgetSettings.tsx` (épinglage par appareil et par instance, dans `kv`).
+**Fichiers.** `apps/mobile/src/native/WidgetBridge.ts` (snapshot en props + image 512 px
+écrite dans le `widgetsDirectory` de l'App Group / stockage partagé Android,
+rafraîchissement) ; **iOS : `expo-widgets`** (stable depuis SDK 56, images via
+`widgetsDirectory`, runtime isolé : pas de hooks ni d'async, tout passe par les props) —
+`widgets/ios/CountdownWidget.tsx`, trois familles ; **repli** `apps/mobile/targets/nous-widget/`
+(Swift WidgetKit via `@bacons/apple-targets`, seulement si le rendu Fraunces / crème /
+grain n'est pas atteignable en Expo UI **et** si un Mac est disponible : itérer sur du
+Swift sans Xcode = un build EAS par essai) ; **Android** : `widgets/android/CountdownWidget.tsx`
+(`react-native-android-widget`) ; `features/countdowns/ui/WidgetSettings.tsx` (épinglage
+par appareil et par instance, dans `kv`).
 
 **Fini quand** : 3 tailles sur 2 OS ; capture à 00:01 après changement de jour **sans
 ouvrir l'app** ; tap → écran du moment ; photo épinglée changée → widget à jour < 1 min
@@ -595,8 +618,9 @@ liste d'irritants à zéro sur un **script de test écrit** de 30 minutes joué 
 
 ### Phase 18 — Tests complets
 
-**Contenu.** Suites Maestro : parcours critiques × 2 OS × hors ligne / en ligne ; chaos
-de sync par **proxy** (10 min de coupures aléatoires sur deux appareils) ; charge locale
+**Contenu.** Parcours critiques × hors ligne / en ligne : **Android automatisé (Maestro),
+iOS par check-list manuelle signée** (ou simulateur / `maestro-ios-device` si un Mac est
+disponible) ; chaos de sync par **proxy** (10 min de coupures aléatoires sur deux appareils) ; charge locale
 (5 000 événements, 20 000 messages, 3 000 médias) ; audit VoiceOver / TalkBack sur les
 six écrans de [05 §8](05-design-system-mobile.md) ; revue de sécurité (RLS, Storage,
 fonctions, secrets, inscriptions fermées).
@@ -615,8 +639,8 @@ référence ; recherche < 100 ms ; audit a11y sans bloquant.
 builds EAS `production` iOS (TestFlight interne — builds expirant après 90 jours,
 reconstruction trimestrielle au runbook) et Android (APK signé, lien privé) ;
 `expo-updates` ; Supabase : inscriptions fermées, sauvegarde hebdomadaire (`backup.yml`,
-le plan gratuit n'a ni PITR ni sauvegardes quotidiennes), purge en option `pg_cron`,
-quotas Storage, alertes, décision plan Pro (T9) ; supervision (Sentry RN + Edge
+le plan gratuit n'a ni PITR ni sauvegardes quotidiennes), purge planifiée par `pg_cron`
+vérifiée, quotas Storage et egress, alertes, décision plan Pro (T9) ; supervision (Sentry RN + Edge
 Functions) ; `docs/RUNBOOK.md` (réactiver un projet en pause, réinitialiser un mot de
 passe, restaurer une sauvegarde, réémettre un build, renouveler TestFlight) ; `README.md`
 du monorepo ; rejeu et vérification des trois étapes de `migrate-v1.ts` ; bascule du
@@ -654,11 +678,13 @@ ne pas les compresser.
 | Grille qui ressemble à Google Calendar | Partis pris et anti-motifs écrits ([05 §4.0](05-design-system-mobile.md)) ; maquettes validées par le couple **avant** le moteur (Phase 6). |
 | Gestes qui se battent (scroll / drag / pinch / pager / swipe-back) | Table d'arbitrage ([06 §3.7](06-moteur-calendrier.md)) ; calendrier sur un seul écran ; spike de la Phase 1. |
 | Grille lente sur Android modeste | Mesure dès le spike puis en Phase 7 (`useFrameCallback`) sur l'Android de référence ; gestes sur le thread UI. |
-| Natif des widgets | Snapshot simple ; `expo-widgets` d'abord, Swift seulement si nécessaire. |
-| Bibliothèques Expo en alpha | Hors du chemin critique ; gorhom ≥ 5.1.8 ; versions épinglées, une montée de SDK par an. |
-| Projet Supabase mis en pause (plan gratuit, 7 jours sans requête) | `keep-alive.yml` dès la Phase 2 ; plan Pro envisagé en Phase 19 (T9). |
-| Quota Storage gratuit (1 Go) face aux photos v1 + vidéos | Volume mesuré en Phase 1 ; compression ; décision plan Pro avant la Phase 11. |
-| Fonctions Supabase réservées au plan Pro (branching, éventuellement `pg_cron`) | Instance locale (CLI + Docker) pour les tests ; purge appelée par l'app. |
+| Natif des widgets | Snapshot simple ; `expo-widgets` (stable, iOS, images) comme voie principale ; Swift seulement avec un Mac. |
+| Alignement des modules natifs (Reanimated 4, worklets, nitro-modules, gorhom ≥ 5.2.14, compressor ≥ 2.0.3) | `expo@^57.0.17` épinglé, `pnpm.overrides`, `expo doctor` en CI, une montée de SDK par an. |
+| **Maestro ne pilote pas d'iPhone physique** ; sans Mac, pas de simulateur iOS | Protocole asymétrique (Android automatisé, iOS check-list) ; T11 tranchée. |
+| Builds EAS limités (15 iOS + 15 Android par mois en gratuit) | Dev build seulement quand une dépendance native change ; JS via serveur de dev / EAS Update ; budget par phase. |
+| Projet Supabase **en pause** (restaurable en un clic pendant 90 jours seulement — avant le 2026-11-15) et re-pause après 7 jours sans activité | Restauration en Phase 1 ; `keep-alive.yml` qui touche une table ; plan Pro envisagé en Phase 19 (T9). |
+| Storage gratuit : 1 Go, **50 Mo par fichier**, egress 5 Go/mois | Volume mesuré en Phase 1 ; `maxUploadBytes` dérivé du plan ; originaux conservés localement ; décision plan Pro avant la Phase 11. |
+| Branching Supabase réservé au plan Pro | Instance locale (CLI + Docker) pour les tests ; `pg_cron` est, lui, disponible en gratuit (mais s'arrête si le projet est en pause). |
 | Aucune sauvegarde du nouveau schéma sur le plan gratuit | `backup.yml` hebdomadaire dès la Phase 3 ; export JSON depuis l'app. |
 | Exécution en arrière-plan non garantie (iOS, Doze) | Rien n'en dépend : rappels programmés à l'avance, sync au premier plan et au retour en ligne, push serveur pour l'inter-personnes. |
 | Dérive d'horloge entre téléphones | `sync_guard` ramène l'avance à `now()` ; horloge locale corrigée par `serverOffset` ; règles absorbantes là où l'ordre compte. |

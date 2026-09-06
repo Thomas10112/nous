@@ -50,9 +50,12 @@ plus tard. Le brief interdit de supprimer une architecture propre pour repartir 
 - **Deux dépôts** : duplication des types et des règles métier, dérive garantie.
 - **Réécrire le web dans le monorepo tout de suite** : hors périmètre ; le calendrier
   passe d'abord.
-- **npm workspaces** : fonctionne, mais pnpm gère mieux les dépendances natives dupliquées
-  (React Native impose une seule copie de `react`, `react-native`, `reanimated`) grâce à
-  `node-linker=hoisted` ciblé.
+- **npm workspaces** : fonctionne. Le gain de pnpm est la vitesse et la déclaration
+  stricte des dépendances. Pour l'outillage natif React Native, `.npmrc` racine
+  `node-linker=hoisted` (recommandation de la doc monorepo Expo) ; l'unicité de `react`,
+  `react-native`, `react-native-reanimated`, `react-native-worklets`,
+  `react-native-nitro-modules` est garantie par `pnpm.overrides` et vérifiée par
+  `expo doctor` en CI.
 
 ## Conséquences
 

@@ -36,4 +36,7 @@ pouvoir être désactivées/configurées. Le calendrier fonctionne hors ligne.
 - Deux appareils du même compte reçoivent chacun leurs notifications locales : on
   dédoublonne en gardant `device_id` du dernier appareil actif pour les rappels
   (préférence « Me rappeler sur cet appareil »).
-- Expo Push Service impose un compte Expo et un projet EAS ; on l'a déjà pour les builds.
+- Expo Push Service gère l'**envoi**, pas les **identifiants** : projet Firebase gratuit
+  (`google-services.json` injecté par secret EAS, clé de compte de service FCM V1 dans
+  `eas credentials`), clé APNs (créée par EAS avec le compte Apple), `EXPO_ACCESS_TOKEN`
+  pour la fonction Edge (T12).

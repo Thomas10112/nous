@@ -34,8 +34,9 @@ Justification, par ordre d'importance :
 3. **Un seul langage** pour un développeur seul : TypeScript partout (app, domaine,
    Edge Functions Supabase, scripts). Les modules natifs se limitent aux widgets.
 4. **Supabase depuis RN** est un cas standard : `supabase-js`, Realtime (presence,
-   broadcast), Storage, Auth avec `expo-secure-store` ; les pushs passent par Expo Push
-   Service depuis une Edge Function.
+   broadcast), Storage, Auth avec le motif `LargeSecureStore` (clé dans
+   `expo-secure-store`, session chiffrée dans `expo-sqlite/kv-store`) ; les pushs passent
+   par Expo Push Service depuis une Edge Function (identifiants Firebase / APNs à fournir).
 5. **Écosystème 2026** : Expo SDK 57 (RN 0.86, React 19.2, New Architecture par défaut,
    Hermes v1, XCFrameworks pré-compilés, montée « sans rupture » depuis SDK 56), Expo
    Router, `expo-sqlite` mûr avec Drizzle, EAS pour les builds et la distribution privée

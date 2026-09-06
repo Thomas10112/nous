@@ -14,19 +14,18 @@ données avec l'application.
 
 | Option                                                                 | iOS                                        | Android                                        |
 | ---------------------------------------------------------------------- | ------------------------------------------ | ---------------------------------------------- |
-| A. `expo-widgets` (Expo UI, alpha, mars 2026)                          | SwiftUI via Expo UI, **pas d'images** pour l'instant | non couvert                              |
+| A. `expo-widgets` (Expo UI ; alpha en SDK 55, **stable depuis SDK 56**) | SwiftUI via Expo UI, **images via `widgetsDirectory`** (fichier de l'App Group écrit par l'app), runtime isolé : pas de hooks ni d'async, tout passe par les props | non couvert |
 | B. `@bacons/apple-targets` + WidgetKit en Swift                        | tout WidgetKit, images, timelines          | —                                              |
 | C. `react-native-android-widget` (config plugin Expo)                   | —                                          | widgets décrits en JSX rendus en RemoteViews, images OK |
 | D. Modules natifs maison (Swift + Kotlin/Glance) via Expo Modules       | complet                                    | complet                                        |
 
 ## Décision
 
-**Le snapshot d'abord, l'implémentation ensuite.** Sur iOS, la contre-expertise indique
-que `expo-widgets` (Expo UI) pourrait déjà afficher une **image locale** (`Image` avec un
-fichier de l'App Group) — ce qui contredit le statut « alpha, sans images » relevé
-ailleurs. Ce point n'est pas tranché ici : la Phase 16 commence par **deux jours de
-prototype `expo-widgets`** ; s'il rend photo + compte à rebours en TSX, on garde A ;
-sinon **B**. Android : **C**. Dans tous les cas, derrière une interface commune
+**iOS : A comme voie principale** (`expo-widgets`, stable depuis SDK 56, images via
+`widgetsDirectory`, en TSX sans Swift) ; **B en repli** seulement si le rendu Fraunces /
+crème / grain n'est pas atteignable en Expo UI — et à condition qu'un Mac soit disponible
+(itérer sur du Swift WidgetKit sans Xcode = un build EAS par essai, sur un quota de 15
+par mois). **Android : C**. Dans tous les cas, derrière une interface commune
 `WidgetBridge` :
 
 - l'application écrit un **snapshot** (`widget-snapshot.json` + image redimensionnée
@@ -42,8 +41,8 @@ sinon **B**. Android : **C**. Dans tous les cas, derrière une interface commune
   deux prochaines dates) ;
 - tap → deep link `nous://moments/{id}`.
 
-Quand `expo-widgets` supportera les images et Android, on pourra remplacer B par A sans
-toucher au snapshot ni au domaine.
+Quand `expo-widgets` couvrira Android, C pourra être remplacé sans toucher au snapshot
+ni au domaine.
 
 ## Conséquences
 

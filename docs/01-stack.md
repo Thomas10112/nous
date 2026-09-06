@@ -15,7 +15,7 @@
 | Supabase | `supabase-js` (déjà maîtrisé) : Auth, PostgREST, Realtime (presence, broadcast), Storage | `supabase_flutter` : complet | `supabase-js` |
 | Base locale | `expo-sqlite` + Drizzle (réactivité par `enableChangeListener`) | `drift` / `sqlite3` : excellent | IndexedDB dans la WebView (éviction possible sur iOS) ou plugin SQLite |
 | Widgets | Code natif Swift/Kotlin quoi qu'il arrive ; `@bacons/apple-targets`, `react-native-android-widget` ; `expo-widgets` (alpha, iOS, sans images) | `home_widget` (mûr, mais natif quand même pour la vue) | Natif pur, aucun partage avec la WebView |
-| Push | `expo-notifications` + Expo Push Service (FCM v1 / APNs gérés) | `firebase_messaging` | Plugin Capacitor Push + FCM/APNs à câbler |
+| Push | `expo-notifications` + Expo Push Service (envoi géré ; identifiants à fournir : projet Firebase / FCM V1, clé APNs) | `firebase_messaging` | Plugin Capacitor Push + FCM/APNs à câbler |
 | Gestes / animations | Reanimated 4 + Gesture Handler : thread UI, springs identiques à framer-motion | Excellent, natif au framework | Pointer Events dans une WebView : latence, conflits de scroll, pas de gestes système |
 | Distribution privée | EAS Build → TestFlight interne / ad hoc, APK | Xcode/Gradle → idem | idem |
 | Écosystème 2026 | Expo SDK 57 (juin 2026 : RN 0.86, React 19.2, montée « sans rupture » depuis SDK 56), Expo Router, `@expo/ui` (SwiftUI/Compose) | Flutter 3.4x stable (Impeller partout) | Capacitor 8 (Xcode 26, SPM) ; `@capacitor-community/sqlite` porté par la communauté |
@@ -59,9 +59,12 @@ rendu responsive ».
 Moodboard (en logique), les tokens et les icônes. On réécrit tout le rendu (c'était de
 toute façon nécessaire : le kit web est 100 % DOM/CSS/framer-motion, D13–D19). On
 apprend Reanimated/Gesture Handler et un peu de Swift/Kotlin pour les widgets. Les
-pièges connus : versions à aligner (Expo SDK ↔ Reanimated ↔ gorhom), builds de
-développement obligatoires (pas Expo Go dès qu'on a des modules natifs), taille
-d'équipe = 1 donc discipline sur les mises à jour SDK (une par an suffit).
+pièges connus : versions à aligner (Expo SDK ↔ Reanimated ↔ worklets ↔ nitro-modules ↔
+gorhom ≥ 5.2.14 pour React 19 ↔ compressor 2.x), **SDK 56 et `expo@57.0.x < 17` à
+proscrire** (régression mémoire Hermes V1 sur les worklets), builds de développement
+obligatoires (pas Expo Go dès qu'on a des modules natifs) et **limités à 15 par OS et
+par mois** sur le plan EAS gratuit, Maestro sans iPhone physique, taille d'équipe = 1
+donc discipline sur les mises à jour SDK (une par an suffit).
 
 **B. Flutter.** Le meilleur rendu et les meilleures animations « gratuites », mais
 **tout** se réécrit en Dart, y compris la logique métier qu'on vient d'identifier comme
@@ -81,20 +84,28 @@ pont natif, pour un résultat que le brief refuse.
 
 - Expo SDK 57 (React Native 0.86, React 19.2, New Architecture, Hermes v1), Expo Router —
   version **épinglée au moment de `create-expo-app`**, jamais planifiée sur un numéro ;
-- `expo-sqlite` + Drizzle ORM ; MMKV pour les préférences ; `expo-secure-store` pour la session ;
+- `expo@^57.0.17` épinglé (les versions antérieures, SDK 56 compris, portent une
+  régression mémoire Hermes V1 sur les worklets) ;
+- `expo-sqlite` + Drizzle ORM ; `expo-sqlite/kv-store` pour les préférences (pas de MMKV :
+  un module natif Nitro de moins) ; session par `LargeSecureStore` (clé AES dans
+  `expo-secure-store`, qui plafonne à 2 Ko par valeur, session chiffrée dans `kv-store`) ;
 - `supabase-js` v2 ; Realtime *Broadcast from Database* + Presence ; Edge Functions pour
   les pushs et la purge ;
-- Reanimated 4 + Gesture Handler ; `@gorhom/bottom-sheet` v5 (ADR-008) ; `expo-image`,
-  `expo-video`, `react-native-compressor`, `expo-image-picker` ; `react-native-svg` ;
-  `expo-haptics`, `expo-blur`, `expo-notifications` ;
+- Reanimated 4 + Gesture Handler ; `@gorhom/bottom-sheet` ≥ 5.2.14 (ADR-008) ; `expo-image`,
+  `expo-video` (miniatures comprises), `react-native-compressor` ≥ 2.0.3 (Nitro),
+  `expo-image-picker` ; `react-native-svg` ; `expo-haptics`, `expo-blur`,
+  `expo-notifications` ; une seule copie de `react-native-nitro-modules` par
+  `pnpm.overrides` ;
 - TanStack Query + Zustand (état d'interface) ;
-- widgets natifs via `@bacons/apple-targets` et `react-native-android-widget` (ADR-006) ;
+- widgets : `expo-widgets` (stable depuis SDK 56, iOS, images via `widgetsDirectory`) et
+  `react-native-android-widget` ; `@bacons/apple-targets` en repli (ADR-006) ;
 - EAS Build/Submit, TestFlight interne + APK privé ;
 - Vitest, Maestro, GitHub Actions.
 
-Ce que l'on **n'utilise pas** dans le chemin critique : `@expo/ui` et `expo-widgets`
-(alpha en 2026 ; réévalués en Phase 17), `@howljs/calendar-kit` (ADR-003), PowerSync /
-WatermelonDB / Legend-State (ADR-005).
+Ce que l'on **n'utilise pas** dans le chemin critique : le `BottomSheet` de `@expo/ui`
+(stable depuis SDK 56, mais style contraint par la plateforme — ADR-008),
+`@howljs/calendar-kit` (ADR-003), PowerSync / WatermelonDB / Legend-State (ADR-005),
+MMKV (remplacé par `expo-sqlite/kv-store`).
 
 ## 5. Dans quel cas on changerait d'avis
 

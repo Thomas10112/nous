@@ -55,10 +55,11 @@ La base locale est la source de vérité de l'écran. Le réseau ne fait que la 
   - `outbox(seq integer pk autoincrement, table_name, row_id, payload, created_at, attempts, last_error, status)` ;
   - `sync_state(table_name pk, cursor_ts, cursor_id, last_pull_at_server)` ;
   - `search_index` (FTS5 ; colonnes en §4.1) ;
-- **MMKV** (`kv`, par appareil, hors compte) : `device_id` (jamais modifié pour une
+- **`kv`** (`expo-sqlite/kv-store`, base distincte par appareil, hors compte — API
+  synchrone, un module natif de moins que MMKV) : `device_id` (jamais modifié pour une
   installation), `serverOffset`, `lastEmittedAt`, `DisplayPreferences`, `slotZoom`,
-  épinglages widget, dernier écran. **Jamais** de curseur ni d'outbox en MMKV (pas de
-  transaction avec SQLite).
+  épinglages widget, dernier écran. **Jamais** de curseur ni d'outbox dans `kv` (base
+  distincte, pas de transaction commune avec la base du compte).
 - `_dirty` n'est pas une colonne : c'est `exists(select 1 from outbox where table_name = ? and row_id = ?)`.
 - Les tests de repositories tournent en Node avec better-sqlite3 : même schéma, mêmes migrations.
 
@@ -98,7 +99,11 @@ suppression est un `patch({ deleted_at })` ; la restauration aussi. Aucune opér
    appliquée localement seulement si plus aucune entrée d'outbox n'existe pour cet id) ;
    les ids **absents** ont perdu au LWW (le trigger a fait `return null`) → entrée
    supprimée, et si la ligne locale portait une modification de l'utilisateur, toast
-   « Ta modification de « {titre} » a été remplacée par celle de {prénom} ».
+   « Ta modification de « {titre} » a été remplacée par celle de {prénom} ». Choix
+   délibéré face à l'alternative `NEW := OLD; return NEW` (qui renverrait la ligne gardée
+   mais réécrirait un tuple identique et redéclencherait les triggers `after`) : ici,
+   rien n'est écrit, rien n'est diffusé, et le pull qui suit rapporte la gagnante. Test
+   pgTAP en Phase 3.
 4. **Tout push est suivi d'un pull** des mêmes tables : c'est lui qui rapporte la version
    gagnante. Au retour en ligne : push, puis pull.
 5. Erreur réseau : on garde, backoff 1 s → 60 s, réessai au retour en ligne (`NetInfo`) et
@@ -160,11 +165,19 @@ create policy "couple: presence" on realtime.messages for insert to authenticate
               and realtime.messages.extension = 'presence');
 ```
 
+Contraintes du contrat *Broadcast from Database* et du plan gratuit : la fonction
+trigger est `security definer set search_path = ''`, `after … for each row`, `return
+null` ; chaque changement envoie `record` **et** `old_record` (compté deux fois dans le
+quota) ; payload **≤ 256 Ko** sur le plan gratuit (un message plus gros est abandonné
+sans erreur : le pull le rattrape — test en Phase 5 avec une ligne > 256 Ko) ;
+100 messages/s, 200 connexions, ≤ 10 clés par objet de présence, 20 messages de
+présence/s.
+
 **Client** : `supabase.channel('couple:' + id, { config: { private: true } })`, `await
-supabase.realtime.setAuth()` avant `subscribe()`. Sur `CHANNEL_ERROR` / `TIMED_OUT`
-(JWT expiré en arrière-plan, socket suspendue par iOS) : `auth.getSession()` (refresh),
-`realtime.setAuth(token)`, re-`subscribe()`, puis pull. Tant que le canal est fermé :
-pull toutes les 30 s.
+supabase.realtime.setAuth()` avant `subscribe()` **et à chaque `TOKEN_REFRESHED`** de
+`onAuthStateChange`. Sur `CHANNEL_ERROR` / `TIMED_OUT` (JWT expiré en arrière-plan, socket
+suspendue par iOS) : `auth.getSession()` (refresh), `realtime.setAuth(token)`,
+re-`subscribe()`, puis pull. Tant que le canal est fermé : pull toutes les 30 s.
 
 **Le broadcast est un indice, pas une source.** Payload
 `{ operation, table, schema, record, old_record }` : on applique `record` de façon
@@ -181,9 +194,14 @@ changements reçus dont `updated_by ≠ moi` et `updated_at` < 30 s ; jamais sto
 
 ## 9. Médias
 
-1. Choix (expo-image-picker) → compression locale (photo 1 920 px q0.84 ; vidéo 1080p,
-   react-native-compressor) → copie dans `documentDirectory/media/{id}` → miniature
-   480 px (ou image de la vidéo) → ligne `media` **locale** (`upload_status = 'pending'`),
+1. Choix (expo-image-picker) → compression locale (photo 1 920 px q0.84 ;
+   vidéo 1080p ou 720p, `react-native-compressor` ≥ 2.0.3) → contrôle de
+   **`media.maxUploadBytes`** (constante dérivée du plan Supabase : **50 Mo par fichier
+   sur le plan gratuit**, proposer de recomprimer en 720p ou de couper ; 200 Mo seulement
+   après passage au Pro — Q6) → copie dans `documentDirectory/media/{id}` → miniature
+   480 px (photo : `expo-image-manipulator` ; vidéo : `expo-video`
+   `player.generateThumbnailsAsync(0.5, { maxWidth: 480 })`, `expo-video-thumbnails`
+   étant retiré depuis SDK 56) → ligne `media` **locale** (`upload_status = 'pending'`),
    **pas encore dans l'outbox**. Le souvenir parent, lui, part tout de suite (sa
    `cover_media_id` est une référence souple ; l'autre voit une case « photo en route »).
 2. `MediaUploader` : > 6 Mo → **upload résumable TUS** (`tus-js-client` sur
@@ -193,7 +211,9 @@ changements reçus dont `updated_by ≠ moi` et `updated_at` < 30 s ; jamais sto
    `upload_status = 'uploaded'`, `storage_path`, `thumb_path`, **et seulement alors**
    `enqueue` de la ligne avec `updated_at` bumpé. 3 échecs → `failed` + « Réessayer ».
 3. Lecture : `local_uri` si présent ; sinon URL signée (cache mémoire + `expo-image`
-   disque) ; miniatures toujours téléchargées en arrière-plan, originaux à la demande.
+   disque) ; miniatures toujours téléchargées en arrière-plan, originaux à la demande
+   **et conservés localement** une fois téléchargés (l'egress du plan gratuit est de
+   5 Go/mois : une vidéo revue cinq fois ne doit pas être re-téléchargée cinq fois).
 4. Suppression → corbeille ; purge serveur → `storage_purge_queue` → Edge `purge-trash`
    appelée par l'app (03 §13).
 
@@ -238,10 +258,16 @@ changements reçus dont `updated_by ≠ moi` et `updated_at` < 30 s ; jamais sto
 | Changement de compte                              | outbox de A jamais poussée sous B                                                                       |
 | Convergence                                       | deux téléphones, 100 écritures croisées, coupures aléatoires (proxy) → identiques 3/3                   |
 
-**Protocole deux téléphones** (défini en Phase 5, réutilisé ensuite) : `scripts/two-phones.sh`
-lance deux flows Maestro en parallèle (`--device`), synchronise par lignes-témoins (chaque
-flow écrit un marqueur, l'autre l'attend via REST), mesure les délais côté serveur
-(`server_updated_at` vs horodatage de réception journalisé par l'app). Les coupures
-passent par un **proxy piloté** (toxiproxy) devant l'URL Supabase du profil `preview` —
-un iPhone physique n'a pas de CLI réseau. Le `FakeServer` (mémoire) couvre le chaos
-déterministe en CI avec une graine, y compris « commit retardé » et « purge ».
+**Protocole deux téléphones** (défini en Phase 5, réutilisé ensuite). Maestro ne pilote
+**pas** d'iPhone physique (support officiel refusé en juin 2026) et, sans Mac (T11), il
+n'y a pas de simulateur iOS. Le protocole est donc **asymétrique** :
+`scripts/two-phones.sh` lance le flow Maestro sur l'**Android** physique (`--device`) et
+affiche pas à pas la **check-list manuelle iOS** (`apps/mobile/maestro/MANUAL-IOS.md`)
+que le testeur exécute sur l'iPhone ; les deux côtés se synchronisent par lignes-témoins
+(chaque côté écrit un marqueur, l'autre l'attend via REST), et les délais sont mesurés
+côté serveur (`server_updated_at` vs horodatage de réception journalisé par l'app). Avec
+un Mac, le flow iOS tourne sur simulateur (qui reçoit les pushs APNs sandbox sur Apple
+Silicon) ou sur l'iPhone via `maestro-ios-device` (dépendance communautaire, assumée).
+Les coupures passent par un **proxy piloté** (toxiproxy) devant l'URL Supabase du profil
+`preview` — un iPhone physique n'a pas de CLI réseau. Le `FakeServer` (mémoire) couvre le
+chaos déterministe en CI avec une graine, y compris « commit retardé » et « purge ».

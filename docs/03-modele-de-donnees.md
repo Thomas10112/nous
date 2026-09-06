@@ -522,8 +522,11 @@ supprimé seul auparavant reste en corbeille.
 
 ### `purge_trash()` et `storage_purge_queue`
 
-Fonction SQL `security definer`, bornée au couple de l'appelant, idempotente, **appelée par
-l'application à chaque ouverture** (`pg_cron` en option si le plan le permet) :
+Fonction SQL `security definer`, idempotente, **planifiée par `pg_cron`** (disponible sur
+tous les plans Supabase, gratuit compris : `cron.schedule('purge-trash', '0 4 * * *',
+$$select public.purge_trash_all()$$)` puis `net.http_post` vers la fonction Edge
+`purge-trash`, secrets dans Vault) **et** appelée par l'application à l'ouverture comme
+filet, bornée au couple de l'appelant (un projet en pause n'exécute pas ses jobs) :
 
 1. `events` `activity` en `declined` depuis > 30 jours → `deleted_at` (Q2) ;
 2. enfants d'abord, parents ensuite : suppression physique des lignes `deleted_at < now() − 30 days` ;

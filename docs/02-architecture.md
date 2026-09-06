@@ -99,8 +99,8 @@ composants de base, maquettes vivantes de `/dev/ui`.
   via `DataEvents`. Pas de store global tenant la base en mémoire.
 - **Zustand** pour l'état d'interface (vue et date ancrée du calendrier, sélection,
   brouillon de sheet, filtres de recherche, présence reçue).
-- **MMKV** pour les préférences par appareil (`DisplayPreferences`, `slotZoom`, pins
-  widget, `device_id`, `serverOffset`).
+- **`expo-sqlite/kv-store`** (`kv`) pour les préférences par appareil (`DisplayPreferences`,
+  `slotZoom`, pins widget, `device_id`, `serverOffset`) — pas de MMKV.
 
 ### État serveur (`packages/data/sync`)
 
@@ -210,7 +210,8 @@ dans `notifications` ; l'Edge Function `push` envoie.
 
 Supabase Auth (surnom → e-mail technique, inchangé). Session persistée par
 **`LargeSecureStore`** : clé AES-256 dans `expo-secure-store` (limite 2 Ko par valeur),
-session chiffrée dans MMKV. Configuration par profil EAS : `EXPO_PUBLIC_SUPABASE_URL`,
+session chiffrée dans `expo-sqlite/kv-store` ; `AppState` → `auth.startAutoRefresh()` /
+`stopAutoRefresh()`. Configuration par profil EAS : `EXPO_PUBLIC_SUPABASE_URL`,
 `EXPO_PUBLIC_SUPABASE_ANON_KEY` lus dans `app.config.ts`. Portes d'entrée : session →
 ouverture de la base du compte → onboarding si aucun siège → app.
 
