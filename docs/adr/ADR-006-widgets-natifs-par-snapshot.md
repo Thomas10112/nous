@@ -21,7 +21,13 @@ données avec l'application.
 
 ## Décision
 
-**B + C**, derrière une interface commune `WidgetBridge` :
+**Le snapshot d'abord, l'implémentation ensuite.** Sur iOS, la contre-expertise indique
+que `expo-widgets` (Expo UI) pourrait déjà afficher une **image locale** (`Image` avec un
+fichier de l'App Group) — ce qui contredit le statut « alpha, sans images » relevé
+ailleurs. Ce point n'est pas tranché ici : la Phase 16 commence par **deux jours de
+prototype `expo-widgets`** ; s'il rend photo + compte à rebours en TSX, on garde A ;
+sinon **B**. Android : **C**. Dans tous les cas, derrière une interface commune
+`WidgetBridge` :
 
 - l'application écrit un **snapshot** (`widget-snapshot.json` + image redimensionnée
   512 px) dans le conteneur partagé (**App Group** `group.nous.app` sur iOS,

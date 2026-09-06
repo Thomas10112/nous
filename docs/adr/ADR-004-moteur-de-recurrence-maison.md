@@ -1,6 +1,6 @@
 # ADR-004 — Moteur de récurrence maison (sous-ensemble de RFC 5545)
 
-**Statut** : proposé · **Date** : 2026-09-06 · **Phase** : 12 (utilisé dès la 10 pour les moments annuels)
+**Statut** : proposé · **Date** : 2026-09-06 · **Phase** : 3 (moteur, domaine pur — consommé par le calendrier dès la Phase 7 et par les moments en Phase 10) ; la Phase 12 n'ajoute que `describe`, `toRRule` et l'interface des habitudes
 
 ## Contexte
 

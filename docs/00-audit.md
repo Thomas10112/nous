@@ -71,6 +71,14 @@ pensé pour être ajouté à l'écran d'accueil, pas une application mobile.
 
 ## 4. Dette technique (par gravité, confirmée dans le code)
 
+> **Contre-lecture.** Les 21 dettes classées « haute » ou « critique » par les auditeurs
+> ont été soumises chacune à un réfutateur indépendant chargé de prouver qu'elles
+> n'existaient pas. **Aucune n'a été réfutée** ; sept ont vu leur gravité abaissée à
+> « moyenne » (pseudo-sheet, verrou de scroll, cibles tactiles, décalage de `totalDays`,
+> médias orphelins, pagination de la galerie, zoom iOS sur les champs) ; deux ont été
+> jugées *plus* graves qu'annoncé (écho temps réel qui perd des caractères en cours de
+> frappe, RLS). Les gravités ci-dessous sont celles retenues après contre-lecture.
+
 ### 4.1 Disqualifiant pour l'offline-first et le partage à deux
 
 | # | Constat | Preuve | Conséquence pour le calendrier |
@@ -97,7 +105,7 @@ pensé pour être ajouté à l'écran d'accueil, pas une application mobile.
 
 | # | Constat | Preuve |
 | - | ------- | ------ |
-| D13 | **Pseudo bottom-sheet** : modale ancrée en bas par CSS, poignée décorative, pas de drag-to-dismiss, pas de détentes, pas de gestion du clavier (`visualViewport` absent), verrou `body.overflow` inefficace sur iOS, fermeture sur `mousedown` du fond sans garde « non enregistré ». | `Modal.tsx:17-58`, `ui.css:561-653` |
+| D13 | **Pseudo bottom-sheet** : modale ancrée en bas par CSS, poignée décorative, pas de drag-to-dismiss, pas de détentes, pas de gestion du clavier (`visualViewport` absent ; le CTA reste atteignable en faisant défiler, mais mal), fermeture sur `mousedown` du fond sans garde « non enregistré ». Le verrou `body.overflow` fonctionne sur iOS ≥ 13 (point réfuté). | `Modal.tsx:17-58`, `ui.css:561-653` |
 | D14 | **Aucun time picker / durée / plage / récurrence** ; `DateInput` = `<input type=date|datetime-local>` brut. | `form.tsx:105-122` |
 | D15 | **Cibles tactiles < 44 pt** presque partout (chip 26, `card__action` 32, `btn--sm` 32, segmented 32, `photos__remove` 24, étoiles ≈ 18) ; `:hover` non gardé par `(hover:hover)` → états collés après un tap ; inputs 15 px → zoom iOS au focus. | `ui.css:16-472` |
 | D16 | **`prefers-reduced-motion` ignoré par framer-motion** (aucun `useReducedMotion` / `MotionConfig`) ; 14 cœurs en boucle infinie dans Proposal. | `global.css:252`, grep vide |
@@ -137,6 +145,11 @@ pensé pour être ajouté à l'écran d'accueil, pas une application mobile.
 | Paramètres de compression (1 920 px, q0.84, seuil 220 Ko) | valeurs | `MediaPipeline` natif |
 | Schéma SQL `items` + REPLICA IDENTITY FULL + bucket privé | tel quel, étendu | `supabase/migrations/0001` (table conservée pour le web) |
 | Modèle `Place {name, lat, lng, country}` + geocoder Nominatim debounced | logique (ajouter annulation, cache) | sous-type `Location` + `useGeocode` |
+
+Mesure honnête (contre-expertise de la stack) : les lignes reprises **à l'identique**
+représentent ≈ 7 % du dépôt (types, utils, login, icônes, tokens, SQL) ; avec la logique
+portée (dates, sélecteurs, machine de geste, contrats), ≈ 12–15 %. Ce qui compte
+davantage : toute la logique métier *à venir* s'écrit une fois, en TypeScript pur.
 
 ## 6. Ce qui doit être refait
 

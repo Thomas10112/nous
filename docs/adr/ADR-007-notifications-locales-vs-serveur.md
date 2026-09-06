@@ -1,6 +1,6 @@
 # ADR-007 — Notifications : locales pour le prévisible, push serveur pour l'inter-personnes
 
-**Statut** : proposé · **Date** : 2026-09-06 · **Phase** : 15 (préparé dès la 12)
+**Statut** : proposé · **Date** : 2026-09-06 · **Phases** : 10 (planificateur local et `LocalScheduler`, pour les rappels J-7 / J-1), 12 (relances d'habitude), 15 (push serveur)
 
 ## Contexte
 
@@ -22,7 +22,10 @@ pouvoir être désactivées/configurées. Le calendrier fonctionne hors ligne.
   à votre anniversaire ».
 - **Préférences** : une ligne `notification_preferences` par personne, lue côté client
   (planification locale) et côté serveur (fonction d'envoi). Heures calmes appliquées aux
-  deux.
+  deux. Les rappels J-7 / J-1 et leur heure appartiennent à **la date** elle-même
+  (`important_moments.reminder_days/reminder_time`), pas à un compte à rebours.
+- **La table `notifications` n'est jamais écrite par le client** : les services de
+  domaine ne la connaissent pas ; seuls les triggers serveur (Phase 15) y insèrent.
 - **Suppression en double** : si l'app est au premier plan sur l'écran concerné, le push
   est affiché en bulle interne, pas en bannière système.
 

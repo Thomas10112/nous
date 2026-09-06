@@ -1,138 +1,139 @@
 # 06 — Moteur calendrier
 
-> Statut : **proposition à valider** (Phase 7). Le moteur est de la logique pure
-> (`packages/domain/calendar`), sans React ni React Native : il se teste en Node en
-> quelques millisecondes et se réutilise tel quel sur le web plus tard.
+> Statut : **proposition à valider** (Phase 7), **version 2** après relecture. Le moteur
+> est de la logique pure (`packages/domain/calendar`), testable en Node ; les gestes et
+> le rendu vivent dans l'app.
 
 ## 1. Pourquoi un moteur maison et pas une bibliothèque
 
-Les bibliothèques de calendrier React Native (`@howljs/calendar-kit`, `react-native-big-calendar`)
-livrent une **apparence** autant qu'une mécanique : en-têtes, grille, blocs d'événements,
-gestes. Or l'identité visuelle de Nous est la priorité absolue, et une activité proposée
-(bulle en pointillés, contre-proposition), une occurrence d'habitude (à cocher), un
-souvenir (photo) et un moment important (constellation) ne sont pas des « events »
-génériques. Adapter une bibliothèque à ça revient à se battre contre elle. Par ailleurs
-`@howljs/calendar-kit` n'a plus été publié depuis dix mois au moment de l'audit et son
-support de Reanimated 4 n'est pas établi.
-
-Ce que ces bibliothèques ont de réellement difficile — placement des blocs qui se
-chevauchent, accrochage à la grille, pagination des jours, calcul des multi-jours —
-tient en quelques fonctions pures bien testées. C'est ce que le moteur fournit. Le rendu
-et les gestes restent dans l'app (Reanimated + Gesture Handler), fins et à notre image.
-
+Les bibliothèques de calendrier React Native livrent une **apparence** autant qu'une
+mécanique, et cette apparence est celle que le brief refuse ([05 §4.0](05-design-system-mobile.md)).
+Ce qu'elles ont de réellement difficile — chevauchements, accrochage, pagination,
+multi-jours, expansion des récurrences — tient en quelques fonctions pures bien testées.
 Voir ADR-003.
 
 ## 2. Vocabulaire
 
 - **Slot** : 30 minutes. `slotIndex = (heure × 60 + minute) / 30`, 0 → 47.
-- **Jour civil** : chaîne `YYYY-MM-DD` (`LocalDate`), jamais un `Date` JS pour les
-  calculs de jours (le `T12:00:00` de la v1 était une rustine pour ce problème).
-- **Instant** : `timestamptz` ISO. Conversions par `Intl`/`date-fns-tz` uniquement à la
-  frontière (affichage, saisie).
-- **Item de calendrier** (`CalendarItem`) : ce que la grille sait placer. Union :
+- **Jour civil** : chaîne `YYYY-MM-DD` (`LocalDate`), jamais un `Date` JS pour les jours.
+- **Instant** : `timestamptz` ISO ; un événement est rendu dans **son** `tz` (heure
+  murale, [03 §6](03-modele-de-donnees.md)).
+- **Item de calendrier** (`CalendarItem`) :
 
 ```ts
 type CalendarItem =
   | { type: 'event';            event: PersonalEvent | CoupleActivity }
-  | { type: 'habit';            habit: Habit; occurrence: HabitOccurrence | Virtual }   // Virtual = pas encore de ligne
+  | { type: 'habit';            habit: Habit; occurrence: HabitOccurrence | Virtual }
   | { type: 'memory';           memory: Memory }
   | { type: 'moment';           moment: ImportantMoment; year: number; occurrence?: MomentOccurrence }
   | { type: 'countdown-marker'; countdown: Countdown; date: LocalDate }
 ```
 
-Chaque item expose une **fenêtre** normalisée `{ startDate, endDate, startAt?, endAt?, allDay, untimed }`
-via `windowOf(item)` : c'est tout ce que la mise en page regarde.
+`windowOf(item)` normalise en `{ startDate, endDate, startAt?, endAt?, allDay, untimed, kind }` :
+
+| Type                      | Fenêtre                                                                   | Rendu                     |
+| ------------------------- | ------------------------------------------------------------------------- | ------------------------- |
+| `event` avec heure        | `start_at → end_at` dans `tz`                                             | bloc                      |
+| `event` tout-la-journée / sans heure / multi-jours | `start_date → end_date`                          | bande (+ badge si sans heure) |
+| `habit` avec `time_of_day` | `time_of_day → + (duration_min ?? 30)`                                   | bloc (`HabitPill`)        |
+| `habit` sans heure        | jour                                                                      | bande (`HabitPill`)       |
+| `memory` avec `time`      | `time → + 30 min`                                                         | bloc (`MemoryStamp`)      |
+| `memory` sans `time`      | jour                                                                      | bande (`MemoryStamp`)     |
+| `moment`                  | `occurrenceDate(moment, year)`                                            | bande + étoile            |
+| `countdown-marker`        | date cible                                                                | bande                     |
+
+Les préférences `visible.*` ([03 §5.1](03-modele-de-donnees.md)) filtrent les types **avant**
+la mise en page.
 
 ## 3. Fonctions du moteur
 
 ### 3.1 Expansion d'une plage
 
 ```ts
-itemsForRange(range: { from: LocalDate; to: LocalDate }, sources: {
-  events, memories, habits, habitOccurrences, moments, momentOccurrences, countdowns
-}): CalendarItem[]
+itemsForRange(range, sources: { events, memories, habits, habitOccurrences, moments,
+  momentOccurrences, countdowns }, prefs: DisplayPreferences): CalendarItem[]
 ```
 
-- filtre les événements/souvenirs qui touchent la plage (`start_date ≤ to && end_date ≥ from`) ;
-- **calcule** les occurrences d'habitude via `recurrence.occurrencesBetween` et les marie
-  aux lignes `habit_occurrences` existantes ;
-- **calcule** les occurrences annuelles des moments (`occurrenceDate(moment, year)`) ;
-- exclut les lignes en corbeille ;
-- renvoie une liste stable, triée (`sortItems`).
+Filtre les événements/souvenirs qui touchent la plage ; **calcule** les occurrences
+d'habitude (`recurrence.occurrencesBetween`, moteur écrit en Phase 3) et les marie aux
+lignes existantes ; calcule les occurrences annuelles des moments ; exclut la corbeille ;
+applique `visible.*` ; trie.
 
-Les vues Mois et Année n'appellent que ça. Les vues Jour et Semaine enchaînent avec la
-mise en page.
+### 3.2 Agenda (Accueil)
 
-### 3.2 Mise en page d'un jour (`layoutDay`)
+`agendaFor(today, days = 7, items, moments, countdowns)` → sections « Aujourd'hui »,
+« Demain », « Cette semaine », plus `nextMoment` et `countdowns` triés. C'est la source
+de l'écran Accueil (Phase 7).
 
-Entrée : items d'un jour avec heure. Sortie : pour chaque item, `{ top, height, column, columns }`
-en unités de slot, où `column/columns` résolvent les chevauchements :
+### 3.3 Mise en page
 
-1. trier par début puis durée décroissante ;
-2. former des **groupes de collision** (union-find sur les intervalles) ;
-3. dans chaque groupe, affecter la première colonne libre (algorithme de coloration
-   d'intervalles) ; `columns` = nombre de colonnes du groupe ;
-4. un item plus court **entièrement contenu** dans un autre reçoit un léger décalage
-   (`nested = true`) plutôt qu'une colonne, pour garder l'aspect « carte posée sur carte »
-   de Nous.
+- `layoutDay(items)` → `{ top, height, column, columns, nested }` en slots : tri par début
+  puis durée décroissante ; groupes de collision (union-find) ; deux items d'un groupe →
+  cartes décalées (`nested`), au-delà → colonnes (coloration d'intervalles).
+- `layoutBands(items, days)` → lanes horizontales des bandes, constantes sur toute la
+  plage ; **appliqué à chaque ligne du `monthGrid`** pour les multi-jours de la vue Mois.
+- `snapToSlot(y, slotHeight)`, `moveWindow(w, deltaSlots, deltaDays)`, `resizeStart`,
+  `resizeEnd` (`minSlots = 1`), `clampToDay(w)`, `toSlot(x, y, geometry)`.
 
-Les items **sans heure** et **tout-la-journée** vont dans `layoutAllDayBand(items)` qui
-calcule des **lanes** horizontales (pour les multi-jours, la lane est constante sur toute
-la semaine : `layoutWeekBands`).
+**Worklets.** Une fonction importée de `packages/domain` n'est pas un worklet.
+Décision : `features/calendar/gestures/worklets.ts` réimplémente `snapToSlot`,
+`clampToDay`, `toSlot` et `moveWindow` avec `'worklet'`, et un test Vitest prouve
+l'égalité avec la version domaine sur 1 000 cas générés. Le domaine reste la référence.
 
-### 3.3 Accrochage et gestes (`snap`, `move`, `resize`)
+### 3.4 Collisions
 
-Fonctions pures appelées depuis les *worklets* Reanimated :
+`conflictsOf(window, items)` — liseré `gold` sur les blocs en conflit, avertissement doux
+à la création (« Mimi a déjà "Dentiste" à cette heure »), jamais bloquant.
 
-```ts
-snapToSlot(y: number, slotHeight: number): number            // index de slot le plus proche
-moveWindow(w: Window, deltaSlots: number, deltaDays: number): Window
-resizeStart(w: Window, deltaSlots: number, minSlots = 1): Window
-resizeEnd(w: Window, deltaSlots: number, minSlots = 1): Window
-clampToDay(w: Window): Window                                  // 00:00 → 24:00, sinon bascule multi-jours explicite
-```
+### 3.5 Grilles
 
-Elles ne connaissent ni l'écran ni le DOM : on peut leur écrire une table de vérité.
-Le geste envoie des `deltaSlots` ; le composant affiche l'aperçu (`patchLocal` façon
-Moodboard v1) et n'écrit dans le repository **qu'au relâchement**.
-
-### 3.4 Collisions (`conflictsOf`)
-
-`conflictsOf(window, items): CalendarItem[]` — items dont la fenêtre horaire chevauche.
-Utilisé pour : le liseré discret sur les blocs en conflit, l'avertissement doux à la
-création d'une activité (« Mimi a déjà "Dentiste" à cette heure »), jamais pour bloquer.
-
-### 3.5 Grilles de mois et d'année
-
-```ts
-monthGrid(year, month, { weekStartsOn: 1 }): { weeks: LocalDate[][]; leading: number; trailing: number }
-yearOverview(year, items): { month: number; counts: Record<CalendarItem['type'], number>; moments: … }[]
-```
+`monthGrid(year, month, { weekStartsOn: 1 })`, `yearOverview(year, items)` (par mois :
+étoiles de moments, nombre de souvenirs, présence d'activités).
 
 ### 3.6 Navigation
 
-`shiftRange(range, view, delta)` pour le swipe (jour ±1, semaine ±7, mois ±1, année ±1),
-`rangeForView(view, anchorDate)`, `todayRange()`. Le composant « pager » garde trois pages
-(précédente / courante / suivante) rendues, la logique décide des dates.
+`shiftRange(range, view, delta)`, `rangeForView(view, anchor)`, `todayRange()`. Le
+calendrier est **un seul écran** ; la vue et la date ancrée vivent dans le store Zustand.
 
-## 4. Vues et ce qu'elles consomment
+### 3.7 Arbitrage des gestes
 
-| Vue      | Moteur                                            | Rendu (app)                                                   |
-| -------- | ------------------------------------------------- | ------------------------------------------------------------- |
-| Home     | `itemsForRange(aujourd'hui → +7)`, prochains moments, comptes à rebours | Cartes « Aujourd'hui », « Bientôt », présence, message rapide |
-| Jour     | `itemsForRange` + `layoutDay` + `layoutAllDayBand` | Grille 48 slots, bande du haut, gestes drag/resize            |
-| Semaine  | idem × 7 + `layoutWeekBands`                       | 7 colonnes, pinch pour zoomer la hauteur de slot              |
-| Mois     | `monthGrid` + `itemsForRange`                      | Cellules avec pastilles et 1–2 titres, tap → Jour             |
-| Année    | `yearOverview`                                     | 12 vignettes, moments importants en constellation             |
+| Geste                                  | Effet                                                                                     |
+| -------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Tap bloc                               | aperçu (Sheet 45 %)                                                                       |
+| Tap créneau vide                       | sélection du créneau (pré-remplit « + »)                                                  |
+| Long-press **350 ms**, annulé si déplacement > 8 px avant activation | sur bloc → saisie (haptique `light`, scale 1.02) puis drag ; sur créneau vide → fantôme de 2 slots que l'on étire ; sur `HabitPill` → même aperçu que le tap (aucun sens caché) |
+| Pan vertical sans activation           | scroll                                                                                    |
+| Pan horizontal ≥ 24 px, angle < 30° (`activeOffsetX` / `failOffsetY`) | pager (jour ±1, semaine ±1)                                |
+| Bloc saisi                             | pager et scroll désactivés ; **auto-scroll** quand le doigt est à < 56 px du bord (vitesse proportionnelle) ; en vue Jour, maintien 600 ms au bord gauche/droit → jour ±1 |
+| Poignées                               | visibles sur le bloc sélectionné seulement ; pilules 28 × 12, `hitSlop` 44               |
+| Pinch (Jour/Semaine)                   | `simultaneousWithExternalGesture(scroll)`, point focal conservé (le créneau sous les doigts reste sous les doigts), plage 0,8–1,6 × base, persisté par appareil, jamais pendant un drag |
+| Swipe à 45°                            | scroll, pas pager                                                                         |
+
+## 4. Vues
+
+| Vue      | Moteur                                            | Rendu                                                                                                   |
+| -------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Accueil  | `agendaFor`                                       | héros → proposition en attente → aujourd'hui → prochaine date → présence + message rapide              |
+| Jour     | `itemsForRange` + `layoutDay` + `layoutBands`     | `DateStrip` + grille 7 h → 23 h (nuit repliée), bande du haut, drag / resize / création par long-press  |
+| Semaine  | idem × 7 + `layoutBands`                          | **Portrait : colonne focus** — le jour tapé prend 2,6 parts, les six autres 0,73 (spring `firm`) ; colonnes étroites = marques et teintes seulement ; drag/resize dans la colonne focus ; swipe = semaine ±1 ; tap sur un en-tête = changer le focus. Paysage : 7 colonnes égales. |
+| Mois     | `monthGrid` + `itemsForRange` + `layoutBands` par ligne | **défilement vertical infini** (pas de pager) ; `MonthCell` = chiffre + marques + bandes, aucun titre ; tap jour = sélection + agenda du jour **sous la grille** ; tap sur l'agenda → Jour |
+| Année    | `yearOverview`                                    | 12 `YearTile` (étoiles, nombre de souvenirs) ; tap → Mois                                              |
 
 ## 5. Contrat de tests (Phase 7)
 
-- `layoutDay` : 0, 1, 2 items disjoints, 2 chevauchants, 3 en chaîne (A∩B, B∩C, A∌C),
-  item contenu, 10 items identiques (colonnes = 10), items de 30 min bord à bord (pas de
-  collision).
-- `layoutWeekBands` : multi-jours à cheval sur deux semaines, deux multi-jours imbriqués.
-- `snap*` : bords (00:00, 23:30), `minSlots`, déplacement négatif, changement de jour.
-- `itemsForRange` : habitude toutes les 3 semaines sur un an, moment le 29 février selon
-  les deux règles, événement multi-jours qui commence avant la plage, corbeille exclue.
-- Propriétés (fast-check) : `moveWindow(moveWindow(w, d), -d) = w` ; `layoutDay` ne
-  produit jamais deux items de même colonne qui se chevauchent.
+- `layoutDay` : 0, 1, 2 items disjoints, 2 chevauchants (nested), 3 en chaîne, item
+  contenu, 10 identiques (colonnes = 10), items bord à bord (pas de collision).
+- `layoutBands` : multi-jours à cheval sur deux semaines, deux imbriqués, **sur une ligne
+  de mois**.
+- `snap*` / `moveWindow` : bords, `minSlots`, négatif, changement de jour ; **DST 29/03 et
+  25/10** ; propriété `moveWindow(moveWindow(w, d), −d) = w` ; **égalité worklet / domaine
+  sur 1 000 cas**.
+- `itemsForRange` : habitude toutes les 3 semaines sur un an, moment le 29 février (deux
+  règles), multi-jours commençant avant la plage, corbeille exclue, `visible.habits =
+  false` retire les habitudes.
+- `agendaFor` : sections, moment à venir, compte à rebours à 0.
+- Gestes (Maestro sur l'**Android de référence** nommé en Phase 1, T10) : long-press puis
+  déplacement < 8 px ne bloque pas le scroll ; drag au bord fait défiler ; pinch garde le
+  point focal ; swipe à 45° = scroll ; un bloc de 30 min en compact reste saisissable.
+- Performance : vue Semaine avec 300 items, **0 frame > 16 ms** pendant 3 s de scroll,
+  mesuré par `useFrameCallback` (compteur de frames longues) sur l'Android de référence.

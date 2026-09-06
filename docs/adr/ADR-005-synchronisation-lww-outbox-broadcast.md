@@ -33,16 +33,28 @@ testables avec un faux serveur en mémoire, et **aucun service supplémentaire**
 opérer. La base locale est une vraie base SQL : recherche FTS5, statistiques, corbeille
 multi-tables, tout se fait en requêtes.
 
-Choix de détail :
+Choix de détail (version 2, après relecture contradictoire) :
 
-- **Deux horodatages** : `updated_at` (client, arbitre) et `server_updated_at` (serveur,
-  curseur monotone). Un seul horodatage ne peut pas faire les deux rôles.
-- **Outbox à ligne complète** : fusion naturelle des modifications successives, upsert
-  idempotent, pas de rejeu de patchs.
-- **Suppression = upsert avec `deleted_at`** : la corbeille et la sync sont la même chose.
-- **Broadcast from Database** plutôt que `postgres_changes` : un topic par couple, RLS,
-  message au format « ligne » identique au pull, pas de limite de filtres par table.
-- **Écho ignoré** par `updated_from = device_id`.
+- **Ordre total** `(updated_at, updated_from)` posé par le client, comparé à l'identique
+  par le trigger serveur et par le client ; une écriture perdante n'est pas écrite du
+  tout (`return null`), le push est un accusé de réception et est toujours suivi d'un
+  pull. Le serveur ramène à `now()` toute horloge en avance de plus de 2 minutes.
+- **Curseur** `(server_updated_at, id)` avec `clock_timestamp()` et une fenêtre de
+  recouvrement de 60 s : `server_updated_at` n'est **pas** strictement monotone sous
+  concurrence, le recouvrement l'absorbe, l'idempotence rend le rejeu gratuit. Curseur
+  écrit dans la même transaction SQLite que la page appliquée.
+- **Identifiants UUID v5** dérivés de la clé naturelle pour tout ce que les deux
+  téléphones peuvent créer « en même temps » : deux créations concurrentes deviennent
+  une seule ligne arbitrée par LWW.
+- **Outbox sans fusion en place** : chaque écriture remplace l'entrée par une nouvelle
+  (`seq` neuf), acquittée par `(row_id, seq)` ; une édition pendant un push en vol survit.
+- **Suppression = upsert avec `deleted_at`** et cascade explicite (`deleted_via`).
+- **Broadcast from Database** sur un canal **privé** par couple (policies sur
+  `realtime.messages`), traité comme un **indice** : application optimiste + pull
+  debounced ; pas de règle d'écho (un écho porte mon couple local → no-op).
+- **Deux exceptions serveur** au LWW ligne entière, et seulement deux : `done` d'une
+  habitude absorbant ; tour de proposition terminal immuable, `events.status` dérivé.
+- **Un fichier SQLite par compte** : rien ne part sous une autre identité.
 
 ## Conséquences
 

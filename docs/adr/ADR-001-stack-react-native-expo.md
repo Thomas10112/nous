@@ -16,7 +16,9 @@ plus adaptée. Comparatif complet : [01-stack.md](../01-stack.md).
 
 ## Décision
 
-**React Native + Expo (SDK 56) + TypeScript**, avec Supabase conservé comme backend.
+**React Native + Expo (SDK 57 au moment de la décision, épinglé à la création du projet)
++ TypeScript**, avec Supabase conservé comme backend — assorti d'une **porte de décision**
+(§ Conséquences).
 
 Justification, par ordre d'importance :
 
@@ -26,16 +28,28 @@ Justification, par ordre d'importance :
    mêmes paramètres que framer-motion, et le respect de reduced-motion intégré.
 2. **Réutilisation réelle** : types, dates (corrigées), utils, connexion par surnom,
    tokens, chemins d'icônes, contrats de props, machine d'états de geste, vocabulaire
-   d'animation — environ 30 % du projet, et surtout **100 % de la logique métier future**
-   partagée avec le web via `packages/domain`. Flutter jetterait tout.
+   d'animation — environ 12 à 15 % des lignes actuelles (mesuré par la contre-expertise,
+   pas 30 %), et surtout **100 % de la logique métier future** partagée avec le web via
+   `packages/domain`. Flutter jetterait tout.
 3. **Un seul langage** pour un développeur seul : TypeScript partout (app, domaine,
    Edge Functions Supabase, scripts). Les modules natifs se limitent aux widgets.
 4. **Supabase depuis RN** est un cas standard : `supabase-js`, Realtime (presence,
    broadcast), Storage, Auth avec `expo-secure-store` ; les pushs passent par Expo Push
    Service depuis une Edge Function.
-5. **Écosystème 2026** : Expo SDK 56 (RN 0.85, React 19.2, New Architecture par défaut,
-   Hermes v1, XCFrameworks pré-compilés), Expo Router, `expo-sqlite` mûr avec Drizzle,
-   EAS pour les builds et la distribution privée (TestFlight interne, APK).
+5. **Écosystème 2026** : Expo SDK 57 (RN 0.86, React 19.2, New Architecture par défaut,
+   Hermes v1, XCFrameworks pré-compilés, montée « sans rupture » depuis SDK 56), Expo
+   Router, `expo-sqlite` mûr avec Drizzle, EAS pour les builds et la distribution privée
+   (TestFlight interne, APK).
+
+## Contre-expertise
+
+Deux juges indépendants ont classé les trois options : la lentille « risque d'ingénierie
+pour un dev seul » préfère l'hybride Capacitor (73) à RN (69) pour son mode d'échec
+moins cher ; la lentille « qualité produit sur téléphone » préfère RN (79) à Flutter (74)
+et à l'hybride (60) à cause du plafond de 60 Hz sur le thread principal de la WebView.
+Détail et arguments contestés dans [01-stack.md §6](../01-stack.md). La décision retient
+la seconde lentille parce que c'est celle du brief, et répond à la première par la porte
+de décision ci-dessous.
 
 ## Alternatives écartées
 
@@ -50,6 +64,12 @@ Justification, par ordre d'importance :
 
 ## Conséquences
 
+- **Porte de décision en Phase 1** : un spike de deux semaines (vue Semaine 48 × 7 avec
+  long-press, drag sur worklet, redimensionnement, pinch, scroll qui ne se bat pas avec
+  le drag) sur build de développement installé sur les deux téléphones du couple, avec
+  des critères mesurables (60 fps soutenus, aucun geste perdu sur 50 essais, clavier
+  stable). Le domaine et le moteur de sync sont écrits en TypeScript pur avant le spike et
+  lui survivent quelle que soit l'issue.
 - **Tout le rendu est réécrit** (le kit web est DOM/CSS/framer-motion). C'est assumé :
   c'était nécessaire de toute façon pour le tactile.
 - **Builds de développement** obligatoires (modules natifs) : pas d'Expo Go. Un compte
