@@ -118,7 +118,7 @@ Les index uniques correspondants restent en place comme filet, plus comme arbitr
 | `pull-only`   | `change_log`, `notifications`                                                                                                                                                           | aucune (`notifications.read_at` : update limité)     | curseur, jamais poussées                |
 | `rpc`         | `push_tokens` (`register_push_token()`), `profile_presence` (`touch_presence()`)                                                                                                        | appel direct en ligne, réessai à l'ouverture        | lecture directe                         |
 | `legacy`      | `items`                                                                                                                                                                                 | aucune depuis le mobile dans cette roadmap           | aucun (Q14)                             |
-| local         | `outbox`, `sync_state`, `search_index`, `kv` (MMKV)                                                                                                                                     | —                                                   | —                                       |
+| local         | `outbox`, `sync_state`, `search_index` (base du compte), `kv` (`expo-sqlite/kv-store`, base de l'appareil)                                                                              | —                                                   | —                                       |
 
 `packages/data/src/sync/registry.ts` reflète ce tableau, avec pour chaque table `lww`
 l'**ordre de push** (parents avant enfants : `couples`, `profiles`, `events`,
@@ -194,7 +194,7 @@ migration (Phase 3), jamais par trigger sur `auth.users` (les inscriptions sont 
 | `color`           | text  | Couleur d'avatar.                                                                       |
 | `avatar_media_id` | uuid  | Référence souple → `media` (`owner_type = 'profile'`).                                  |
 | `login`           | text  | Surnom de connexion (slug), informatif.                                                 |
-| `preferences`     | jsonb | Copie synchronisée de `DisplayPreferences` (§5.1), l'original vit sur l'appareil (MMKV). |
+| `preferences`     | jsonb | Copie synchronisée de `DisplayPreferences` (§5.1), l'original vit sur l'appareil (`kv`). |
 | + squelette       |       | RLS : `select` couple, `update using (id = auth.uid())`.                                |
 
 ### `profile_presence` (`rpc`)
@@ -214,7 +214,7 @@ le couple. La présence « En ligne » vient de Realtime Presence (§11).
   statsHidden: boolean, haptics: boolean, effects: { grain: boolean } }
 ```
 
-Stockées en MMKV (par appareil), recopiées dans `profiles.preferences` (par personne).
+Stockées dans `kv` (par appareil), recopiées dans `profiles.preferences` (par personne).
 Elles filtrent (« informations visibles ») et n'altèrent jamais couleurs, polices ni
 formes.
 

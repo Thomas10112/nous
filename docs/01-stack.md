@@ -31,7 +31,7 @@
 | 5 | Performances listes/grilles | 4 | 5 | 3 | A : FlashList, vues natives, Hermes v1. C : DOM dans WebView, `requestAnimationFrame` et `pointermove` plafonnés à 60 Hz sur le thread principal. |
 | 6 | Animations, gestes, reduced-motion | 4 | 5 | 3 | A : Reanimated worklets sur thread UI, `ReduceMotion` intégré. C : framer-motion anime en composited, mais un drag piloté par `pointermove` reste à 60 Hz. |
 | 7 | Calendrier tactile (grille 30 min, drag, resize, multi-jours) | 4 | 4 | 2 | Aucune bibliothèque ne convient à l'identité Nous (ADR-003) ; A et B écrivent la même logique ; C doit arbitrer scroll ↔ drag, autoscroll et clavier à la main, et reste plafonné. |
-| 8 | Stockage local (SQLite, MMKV, fichiers, cache images) | 4 | 5 | 3 | |
+| 8 | Stockage local (SQLite, clé-valeur, fichiers, cache images) | 4 | 5 | 3 | |
 | 9 | iOS (build, TestFlight, distribution à 2) | 4 | 4 | 4 | EAS simplifie A (pas de Mac) ; les trois ont besoin d'un compte développeur. |
 | 10 | Android (build, APK) | 5 | 5 | 4 | |
 | 11 | Réutilisation du TypeScript existant | 3 | 1 | 5 | A : ≈ 12–15 % des lignes actuelles (types, dates, utils, login, tokens, icônes, contrats, machine de geste) mais 100 % de la logique métier **future** partagée. C : ≈ 85 % des lignes, mais ≈ 0 % du livrable calendrier. |

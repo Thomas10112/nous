@@ -3,6 +3,11 @@
 Un site privé, à deux. Journal, carte, classement d'Airbnb, capsules temporelles,
 moodboard collaboratif — et un compteur qui tourne depuis le premier jour.
 
+> **Calendrier mobile — roadmap en attente de validation.** L'audit du site, le choix de
+> la stack mobile, l'architecture cible, le modèle de données et la roadmap en 19 phases
+> sont dans [`docs/ROADMAP.md`](docs/ROADMAP.md) (et les documents liés dans `docs/`).
+> Aucun code applicatif n'est modifié tant que ces documents ne sont pas validés.
+
 Il fonctionne tout de suite, sans compte ni serveur. Et quand vous voulez pouvoir
 écrire **tous les deux, depuis vos PC et vos téléphones**, une petite configuration
 suffit (section « Écrire à deux » plus bas).

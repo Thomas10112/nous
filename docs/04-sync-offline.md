@@ -219,10 +219,10 @@ changements reçus dont `updated_by ≠ moi` et `updated_at` < 30 s ; jamais sto
 
 ## 10. Identité de l'appareil et horloge
 
-- `device_id` : UUID à l'installation, en MMKV, jamais changé.
+- `device_id` : UUID à l'installation, dans `kv`, jamais changé.
 - Horloge locale **monotone et corrigée** :
   `updated_at = max(Date.now() + serverOffset, lastEmittedAt + 1 ms)`, `lastEmittedAt`
-  en MMKV. `serverOffset` vient des réponses de push. Si `|serverOffset| > 2 min`,
+  dans `kv`. `serverOffset` vient des réponses de push. Si `|serverOffset| > 2 min`,
   bandeau une fois dans Réglages → Synchronisation : « L'horloge de ce téléphone est
   décalée de N min ; tes modifications sont datées à l'heure du serveur ». Côté serveur,
   `sync_guard()` ramène à `now()` tout `updated_at` en avance de plus de 2 min : un
