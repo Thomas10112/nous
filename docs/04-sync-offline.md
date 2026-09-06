@@ -170,5 +170,6 @@ périodique » (30 s) jusqu'à reconnexion, et fait un pull à la reconnexion po
   transaction ; échec = rollback complet ; FTS mis à jour.
 - **SyncEngine** avec un faux serveur en mémoire : push/pull/realtime dans tous les ordres,
   coupures aléatoires, écho de ses propres écritures, double appareil du même utilisateur.
-- **Intégration** contre un projet Supabase de test (branche) : triggers LWW,
-  `broadcast_changes`, RLS croisée (le couple B ne voit rien du couple A).
+- **Intégration** contre une instance Supabase locale (`supabase start`, Docker ; le
+  *branching* hébergé est réservé au plan Pro) : triggers LWW, `broadcast_changes`, RLS
+  croisée (le couple B ne voit rien du couple A).

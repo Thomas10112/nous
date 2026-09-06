@@ -442,10 +442,14 @@ Rempli par **trigger serveur** sur `events`, `important_moments`, `moment_occurr
 
 `deleted_at` sur toute table métier. L'écran « Corbeille » liste les lignes supprimées de
 tous types (requête locale union). Restaurer = `deleted_at = null` (+ `updated_at` bump →
-propagation normale). Purge : tâche `pg_cron` quotidienne (`deleted_at < now() - 30 days`)
-qui supprime les lignes et les objets Storage orphelins (fonction Edge `purge-trash`).
-Supprimer un parent (souvenir) met ses médias à la corbeille ; restaurer le parent les
-restaure.
+propagation normale). Purge : fonction SQL `purge_trash()` (`security definer`, bornée au
+couple de l'appelant, idempotente) qui supprime les lignes dont
+`deleted_at < now() - 30 days` et inscrit les chemins Storage à effacer dans
+`storage_purge_queue` ; l'application l'appelle à chaque ouverture (deux utilisateurs
+suffisent à la faire tourner, sans dépendre d'un planificateur), et une fonction Edge
+`purge-trash` vide la file Storage. `pg_cron` peut appeler les deux en plus si le plan
+Supabase le permet — c'est une option, pas une dépendance. Supprimer un parent (souvenir)
+met ses médias à la corbeille ; restaurer le parent les restaure.
 
 ## 13. Sections historiques (`items`)
 

@@ -28,7 +28,8 @@ même contrôle, on change l'implémentation de `Sheet` seulement.
 
 ## Conséquences
 
-- Une dépendance de plus, bien maintenue, alignée sur Reanimated 4 (SDK 56).
+- Une dépendance de plus, bien maintenue ; **épingler ≥ 5.1.8**, première version
+  compatible Reanimated 4 (les 5.1.x antérieures ne s'ouvrent pas avec Reanimated 4).
 - Les routes modales d'Expo Router (`sheets/*`) rendent un `Sheet` : navigation et sheet
   restent cohérentes (retour matériel Android = fermer la sheet).
 - Garde « modifications non enregistrées » implémentée une fois dans `FormSheet`.

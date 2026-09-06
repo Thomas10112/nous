@@ -34,3 +34,4 @@ phase concernée est indiquée.
 | T6 | Widgets Android : `react-native-android-widget` (config plugin Expo) ou Glance natif ? | `react-native-android-widget`. | 16 |
 | T7 | Monorepo : **pnpm workspaces** (recommandé) ou npm workspaces ? | pnpm. | 2 |
 | T8 | Les deux comptes existent-ils déjà dans Supabase Auth ? Quels `auth.uid()` ? (pour le script de migration `items` → `couples/profiles`) | À fournir. | 3 |
+| T9 | **Plan Supabase** : le gratuit met le projet en pause après 7 jours sans requête, limite le Storage à 1 Go (photos v1 + vidéos) et réserve le *branching* au plan Pro (25 $/mois). Rester gratuit avec un `keep-alive` et des tests locaux, ou passer Pro ? | Gratuit + keep-alive + tests locaux jusqu'à la Phase 11 ; décision Pro avant les vidéos selon le volume mesuré en Phase 1. | 1, 11, 19 |

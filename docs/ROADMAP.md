@@ -108,7 +108,7 @@ nous/
 │  ├─ scripts/                    migrate-v1.ts
 │  └─ seed/
 ├─ docs/                          ce dossier
-├─ .github/workflows/ci.yml
+├─ .github/workflows/ci.yml  keep-alive.yml
 ├─ pnpm-workspace.yaml  package.json  tsconfig.base.json  .eslintrc.cjs  .prettierrc
 ```
 
@@ -150,7 +150,9 @@ la poser après coup coûte une réécriture.
 - `pnpm-workspace.yaml`, `package.json` racine (scripts `typecheck`, `lint`, `test`,
   `web:build`, `mobile:*`), `tsconfig.base.json` (strict + `noUncheckedIndexedAccess` +
   `exactOptionalPropertyTypes`), `.eslintrc.cjs` (typescript-eslint, react-hooks,
-  `import/no-restricted-paths` entre couches), `.prettierrc`, `.github/workflows/ci.yml`.
+  `import/no-restricted-paths` entre couches), `.prettierrc`, `.github/workflows/ci.yml`,
+  `.github/workflows/keep-alive.yml` (une requête REST toutes les 6 h pour que le projet
+  Supabase gratuit ne soit jamais mis en pause).
 - `apps/web/**` ← `git mv` de `src/`, `index.html`, `vite.config.ts`, `supabase/schema.sql`
   reste à la racine `supabase/` (renommé `legacy/schema.sql`).
 - `apps/mobile/` ← `create-expo-app` (SDK 56, Expo Router, TypeScript), `app.config.ts`
@@ -208,7 +210,8 @@ téléphones : connexion réussie, thème et polices visibles.
   trigger de création de profil), `0002_calendar.sql` (events, proposals),
   `0003_moments.sql`, `0004_memories_media.sql`, `0005_habits.sql`,
   `0006_messaging.sql`, `0007_notifications.sql`, `0008_history_trash.sql`
-  (change_log, `deleted_at`, pg_cron purge), `0009_sync.sql` (triggers
+  (change_log, `deleted_at`, fonction `purge_trash()` appelée par l'app, `pg_cron` en
+  option), `0009_sync.sql` (triggers
   `server_updated_at`, garde LWW, `realtime.broadcast_changes` sur chaque table,
   policies `realtime.messages`), `0010_legacy_items.sql` (colonnes `server_updated_at`,
   `deleted_at`, index sur `items` — additif).
@@ -224,13 +227,16 @@ corbeille).
 **Tests.** Domaine : invariants zod, `occurrenceDate` (29/02 selon les deux règles),
 machine de propositions (table de transitions complète), `defaultChapters`.
 Repositories (Node + better-sqlite3) : CRUD + corbeille + `changesSince` pour chaque
-table, transaction rollback. SQL : sur une **branche Supabase** de test, script
-`supabase/tests/*.sql` (pgTAP) — LWW refuse une écriture plus ancienne, RLS croisée
-(couple B ne voit rien de A), `delete_message` après 6 min refusé, purge.
+table, transaction rollback. SQL : sur une **instance Supabase locale** (`supabase start`,
+Docker, gratuit — le *branching* hébergé est réservé au plan Pro), tests pgTAP
+`supabase/tests/*.sql` lancés par `supabase test db` — LWW refuse une écriture plus
+ancienne, RLS croisée (couple B ne voit rien de A), `delete_message` après 6 min refusé,
+purge. La CI lance la même instance locale.
 
 **Fini quand** : `pnpm test` couvre les trois couches ; les migrations s'appliquent
-sur la branche de test et le web v1 y fonctionne toujours ; `migrate-v1.ts` à sec
-produit le rapport attendu sur les données réelles.
+sur l'instance locale puis sur le projet réel (`supabase db push`) et le web v1 y
+fonctionne toujours ; `migrate-v1.ts` à sec produit le rapport attendu sur les données
+réelles.
 
 **Effort.** 6–8 jours.
 
@@ -290,8 +296,8 @@ LWW, écho, rattrapage, état visible.
 
 **Tests.** Unitaires `applyRemote` (matrice LWW × dirty), fusion outbox, backoff.
 Intégration `SyncEngine` + `FakeServer` : ordres aléatoires push/pull/realtime, coupures,
-deux clients. Intégration Supabase (branche) : `broadcast_changes` reçu < 1 s, écho
-ignoré, rattrapage après `TIMED_OUT`. Sur deux téléphones : modifier le même objet
+deux clients. Intégration Supabase (instance locale) : `broadcast_changes` reçu < 1 s,
+écho ignoré, rattrapage après `TIMED_OUT`. Sur deux téléphones : modifier le même objet
 hors ligne sur les deux, reconnecter → convergence sur le plus récent, aucun doublon.
 
 **Fini quand** : le test « deux téléphones, 100 écritures croisées, mode avion aléatoire »
@@ -455,8 +461,8 @@ chapitre ; « Ajouter à la Galerie » ; galerie unifiée.
 **Tests.** Pipeline sur fichiers de référence (HEIC, portrait EXIF, vidéo 4K 30 s → 1080p) ;
 reprise d'envoi après kill de l'app ; Maestro : ajouter 10 photos + 1 vidéo hors ligne à
 un événement, reconnecter, vérifier sur l'autre téléphone (miniatures d'abord) ;
-suppression → corbeille → restauration → média toujours là ; purge sur la branche de
-test après 30 jours simulés.
+suppression → corbeille → restauration → média toujours là ; purge sur l'instance
+locale après 30 jours simulés.
 
 **Fini quand** : la galerie de l'app contient tout (v1 + nouveaux) et fonctionne hors ligne.
 
@@ -653,5 +659,7 @@ dessus : ne pas les compresser).
 | Natif des widgets (Swift/Kotlin) | Snapshot simple, périmètre minimal, une seule vue SwiftUI ; possibilité de livrer iOS d'abord. |
 | Bibliothèques Expo alpha (`@expo/ui`, `expo-widgets`) | Non utilisées dans le chemin critique ; gorhom + WidgetKit natif. |
 | Dérive « site responsive » | Deux téléphones réels à chaque phase ; galerie de composants validée par le couple. |
-| Projet Supabase en pause / quota gratuit | Réactivation en Phase 1 ; alerte si pas d'accès 5 jours (les pushs quotidiens de sync suffisent à le garder actif). |
+| Projet Supabase **mis en pause** après 7 jours sans requête (plan gratuit) : l'app ne synchroniserait plus jusqu'à réactivation manuelle | Réactivation en Phase 1 ; une GitHub Action `keep-alive` (une requête REST toutes les 6 h) dès la Phase 2 ; passage au plan Pro envisagé en Phase 19 (T9). |
+| **Quota Storage** du plan gratuit (1 Go) face aux photos v1 + vidéos des souvenirs | Mesure du volume réel en Phase 1 ; compression 1080p/1920 px ; décision plan Pro (100 Go) avant la Phase 11 (T9). |
+| Fonctionnalités Supabase réservées au plan Pro (branching, éventuellement `pg_cron`) | Tests sur instance locale (CLI + Docker) ; purge par fonction SQL appelée par l'app à l'ouverture, `pg_cron` seulement en option. |
 | Perte de données à la migration v1 | `migrate-v1.ts` idempotent, à sec d'abord, sauvegarde JSON avant, web v1 conservé. |
