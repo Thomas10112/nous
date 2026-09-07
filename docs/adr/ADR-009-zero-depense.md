@@ -53,7 +53,16 @@ Le couple ne veut rien payer : ni abonnement ni achat unique. Une étude contrad
 8. **Comptes et dépôt** : les deux adresses invitées dans l'organisation Supabase (e-mails
    Auth) ; pas d'OAuth Apple ; dépôt public conservé sauf avis contraire du couple, sans
    aucun secret ; `google-services.json` et keystore hors git.
-9. **Réversibilité** : tout est écrit derrière des adaptateurs (`packages/data` : stockage,
+9. **Repli universel** : si la chaîne de sideload Android devient un jour impraticable
+   (Advanced Protection imposé, vérification développeur étendue à l'installation directe,
+   Auto Blocker verrouillé), **la PWA sert aussi sur le S24 Ultra**. Une web app installée
+   par Chrome échappe à Auto Blocker, à Play Protect, à Advanced Protection et à la
+   vérification développeur, et Chrome sur Android sait recevoir du Web Push. Ce que l'APK
+   apporte en plus se réduit alors à trois choses, qui sont précisément les plus exposées :
+   le widget d'écran d'accueil, les rappels exacts hors ligne, et la fluidité du geste à
+   120 Hz. Le client web étant de toute façon construit pour l'iPhone, ce repli ne coûte
+   rien de plus — c'est l'assurance du projet, et une raison de plus de soigner le spike web.
+10. **Réversibilité** : tout est écrit derrière des adaptateurs (`packages/data` : stockage,
    médias, push, cartes). Si le couple accepte un jour les 99 €/an d'Apple, l'app RN se
    construit pour iOS avec push et widgets sans changer le domaine ni la sync ; si un plan
    Supabase Pro est accepté, la politique médias s'élargit par une constante.

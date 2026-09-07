@@ -426,9 +426,10 @@ sur données de démonstration (repositories en mémoire).
   (déplacés depuis les maquettes, sans changement visuel).
 - `features/home/{screen/HomeScreen.tsx,ui/TodayCard.tsx,ui/SoonList.tsx,ui/EmptyToday.tsx,hooks/useAgenda.ts}`,
   `app/(tabs)/index.tsx`, `app/(tabs)/calendar/{index,[view]}.tsx`.
-- **Avant de calibrer les hauteurs de créneau**, figer le mode de résolution du S24 Ultra
-  (il sort d'usine en FHD+, pas en QHD+ : la densité vue par React Native diffère et la
-  grille se décalerait) et le noter dans le README.
+- **Avant de calibrer les hauteurs de créneau**, mesurer `Dimensions.get('window')` et
+  `PixelRatio.get()` sur le S24 Ultra dans ses deux modes de résolution (il sort d'usine en
+  FHD+) et relever le réglage « Fluidité des mouvements » : en mode Standard l'écran est
+  plafonné à 60 Hz et le budget par frame redevient 16,7 ms.
 
 **Tests.** Contrat de [06 §5](06-moteur-calendrier.md) : mise en page, bandes sur ligne de
 mois, DST, **égalité worklets / domaine sur 1 000 cas**, `agendaFor`, gestes sur l'Android
@@ -765,6 +766,10 @@ ne pas les compresser.
 | Dérive d'horloge entre téléphones | `sync_guard` ramène l'avance à `now()` ; horloge locale corrigée par `serverOffset` ; règles absorbantes là où l'ordre compte. |
 | Perte de données à la migration v1 | Étapes idempotentes, à sec d'abord, sauvegarde JSON + `pg_dump` avant, web v1 conservé, mapping explicite des comptes (T8). |
 | **iPhone sans compte Apple** : pas de push, profils de 7 jours, sideloaders cassés à chaque iOS | Client iPhone = PWA à périmètre réduit accepté par écrit (Q22) ; spike natif borné à 2 jours ; un Mac ne change rien (ADR-009). |
+| **Reanimated + New Architecture sur Android** : l'issue `software-mansion/react-native-reanimated#7435` (ouverte depuis avril 2025) rapporte des saccades reproductibles sur Android en New Architecture, absentes en ancienne architecture et absentes sur iOS | C'est le risque numéro un du spike de la Phase 1, et il se mesure exactement là : sur le S24 Ultra réel, compteur de frames armé. Si le geste ne tient pas les 8,3 ms, la porte de décision se referme sur un fait, pas sur une impression. |
+| **Auto Blocker** (Samsung) ou **Advanced Protection** (Android 16) actifs sur le S24 Ultra : plus aucun APK ne s'installe, le réglage « installer des applications inconnues » est grisé, et Auto Blocker neutralise aussi `adb` | Vérifié en Phase 1 avant tout le reste ; les deux interrupteurs sont à laisser éteints, c'est la seule contrainte réelle imposée au couple ([09 §12.1](09-zero-depense.md)). Repli ultime si l'un des deux devient obligatoire : la PWA, qui échappe à tous ces verrous (§7). |
+| **Notifications muettes** : « veille profonde » de Samsung, mise en veille automatique, Device Care, ou rafale de messages atténuée par Android 16 | « Jamais en veille » + « sans restriction » + batterie adaptative coupée, à refaire après chaque montée One UI ; messages en MessagingStyle adossés à un raccourci de conversation ; écran de diagnostic dans l'app (Phase 17). |
+| **Une mise à jour majeure casse un client** : One UI 9 attendu fin septembre 2026, iOS 27 vers le 14 septembre 2026 | Ne pas livrer ni mettre à jour pendant la fenêtre de déploiement ; check-list de non-régression par client après chaque majeure. |
 | **Vérification développeur Android** (mondiale « 2027 et au-delà ») : un APK non enregistré ne se met plus à jour hors ADB | Un seul keystore sauvegardé ; compte « distribution limitée » gratuit dès son ouverture en France ; repli advanced flow / ADB ; EAS Update pour le JS. |
 | Dérive des offres gratuites (CARTO, Expo Go, GitHub, Google, Apple ont tous changé leurs règles en 2026) | Adaptateurs dans `packages/data` ; revue trimestrielle des quotas ; provision de 2–5 jours par an ([09 §8](09-zero-depense.md)). |
 
