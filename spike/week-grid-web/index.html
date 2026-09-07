@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Semaine Nous</title>
+<meta name="theme-color" content="#f5f9fc">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Nous spike">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<style>
+:root {
+  --bg: #f5f9fc; --surface: #ffffff; --surface-2: #f4f9fd; --surface-3: #e7f0f8; --paper: #fdfefe;
+  --ink: #22303c; --ink-2: #5c6f7f; --ink-3: #8ea0ae;
+  --line: rgba(34,60,82,.10); --line-strong: rgba(34,60,82,.18);
+  --accent: #5f97c6; --accent-soft: #e0edf8; --accent-ink: #3f6f9c;
+  --gold: #d8a95c; --gold-soft: #f7eeda;
+  --plum: #8189bf; --plum-soft: #e8eaf7; --plum-ink: #575f9a;
+  --sage: #6fa89a; --danger: #b4433f;
+  --serif: 'Iowan Old Style', 'Palatino', Georgia, serif;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --slot-h: 30px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; overscroll-behavior: none; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15px;
+  -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
+  display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
+}
+input, textarea { -webkit-user-select: auto; user-select: auto; }
+
+/* ---------- barre du haut ---------- */
+.topbar {
+  padding: calc(var(--safe-top) + 10px) 14px 10px; display: flex; align-items: baseline; gap: 10px;
+  background: var(--bg); border-bottom: 1px solid var(--line); flex: none;
+}
+.topbar h1 { font-family: var(--serif); font-size: 19px; font-weight: 500; margin: 0; letter-spacing: -.01em; }
+.topbar .sub { font-size: 12px; color: var(--ink-3); }
+.meter {
+  margin-left: auto; font-variant-numeric: tabular-nums; font-size: 11px; color: var(--ink-2);
+  background: var(--surface-3); border-radius: 999px; padding: 3px 9px; white-space: nowrap;
+}
+.meter.bad { background: #f6e1df; color: var(--danger); }
+
+/* ---------- onglets ---------- */
+.tabs { display: flex; gap: 6px; padding: 8px 12px; background: var(--bg); flex: none; }
+.tab {
+  flex: 1; border: 0; border-radius: 999px; padding: 9px 0; font: inherit; font-size: 13px; font-weight: 600;
+  background: var(--surface-3); color: var(--ink-2); min-height: 40px;
+}
+.tab[aria-selected="true"] { background: var(--accent); color: #fff; }
+.screen { flex: 1; min-height: 0; display: none; flex-direction: column; }
+.screen[data-active] { display: flex; }
+
+/* ---------- grille semaine ---------- */
+.weekhead { display: flex; padding: 0 8px; flex: none; }
+.weekhead .gutter { width: 44px; flex: none; }
+.dayhead {
+  flex: 1 1 0; min-width: 0; text-align: center; padding: 4px 0 8px; border: 0; background: none;
+  font: inherit; font-size: 12px; color: var(--ink-2); transition: flex-grow .32s cubic-bezier(.22,1,.28,1);
+}
+.dayhead .d { font-family: var(--serif); font-size: 17px; color: var(--ink); display: block; line-height: 1.1; }
+.dayhead[data-today] .d { color: var(--accent-ink); }
+.dayhead[data-today]::after { content: '♥'; display: block; font-size: 9px; color: var(--accent); line-height: 1; }
+.dayhead[data-focus] { flex-grow: 2.6; }
+.dayhead[data-focus] .d { font-size: 19px; }
+
+.scroller {
+  flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden;
+  touch-action: pan-y;                 /* laisse le défilement vertical, bloque le zoom du navigateur */
+  -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  padding: 0 8px calc(var(--safe-bottom) + 24px);
+}
+.canvas { position: relative; display: flex; }
+.gutter { width: 44px; flex: none; position: relative; }
+.gutter span {
+  position: absolute; right: 6px; transform: translateY(-50%); font-family: var(--serif);
+  font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums;
+}
+.cols { flex: 1; min-width: 0; display: flex; position: relative; }
+.col {
+  flex: 1 1 0; min-width: 0; position: relative;
+  background: linear-gradient(var(--paper), var(--paper)); border-left: 1px solid var(--line);
+  transition: flex-grow .32s cubic-bezier(.22,1,.28,1);
+}
+.col:last-child { border-right: 1px solid var(--line); }
+.col[data-focus] { flex-grow: 2.6; }
+.col[data-dim] { flex-grow: .73; }
+.now { position: absolute; left: 0; right: 0; height: 1px; background: var(--accent); pointer-events: none; z-index: 3; }
+.now::before { content: '♥'; position: absolute; left: 2px; top: -8px; font-size: 10px; color: var(--accent); }
+
+.ev {
+  position: absolute; left: 3px; right: 3px; border-radius: 11px; padding: 4px 7px; overflow: hidden;
+  background: var(--paper); box-shadow: 0 1px 2px rgba(34,60,82,.10);
+  font-size: 12px; line-height: 1.25; touch-action: pan-y; will-change: transform;
+}
+.ev .t { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ev .r { font-family: var(--serif); font-style: italic; font-size: 11px; color: var(--ink-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ev[data-kind="nous"] { background: linear-gradient(120deg, var(--accent-soft), var(--gold-soft)); }
+.ev[data-kind="nous"] .t { font-family: var(--serif); font-weight: 500; font-size: 13px; }
+.ev[data-kind="proposed"] { background: var(--plum-soft); border: 1.5px dashed var(--plum); color: var(--plum-ink); }
+.ev[data-kind="proposed"] .t { font-family: var(--serif); font-weight: 500; }
+.ev[data-sel] { box-shadow: 0 0 0 2px var(--accent), 0 2px 6px rgba(34,60,82,.14); z-index: 4; }
+.ev[data-lift] { transform: scale(1.03); box-shadow: 0 6px 18px rgba(34,60,82,.22); z-index: 6; opacity: .96; }
+.ghost { position: absolute; left: 3px; right: 3px; border-radius: 11px; background: var(--accent-soft);
+  border: 1.5px dashed var(--accent); pointer-events: none; z-index: 5; }
+.handle { position: absolute; left: 50%; width: 28px; height: 12px; margin-left: -14px; z-index: 7;
+  display: flex; align-items: center; justify-content: center; touch-action: none; }
+.handle::before { content: ''; width: 26px; height: 4px; border-radius: 2px; background: var(--accent); }
+.handle[data-edge="start"] { top: -6px; } .handle[data-edge="end"] { bottom: -6px; }
+.handle::after { content: ''; position: absolute; left: -8px; right: -8px; top: -16px; bottom: -16px; }
+
+/* ---------- messagerie ---------- */
+.chat { flex: 1; min-height: 0; }   /* le display vient de .screen[data-active] */
+.msgs { flex: 1; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.msg { max-width: 78%; padding: 8px 12px; border-radius: 16px; font-size: 15px; line-height: 1.35; }
+.msg[data-mine] { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 5px; }
+.msg:not([data-mine]) { align-self: flex-start; background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: 5px; }
+.composer { flex: none; display: flex; gap: 8px; padding: 10px 12px calc(var(--safe-bottom) + 10px);
+  border-top: 1px solid var(--line); background: var(--bg); }
+.composer input { flex: 1; min-width: 0; border: 1px solid var(--line-strong); border-radius: 999px;
+  padding: 11px 16px; font: inherit; font-size: 16px; background: var(--surface); color: var(--ink); }
+.composer button { border: 0; background: var(--accent); color: #fff; border-radius: 999px; width: 44px; height: 44px; font-size: 17px; }
+
+/* ---------- mesures ---------- */
+.measures { flex: 1; overflow-y: auto; padding: 12px 14px calc(var(--safe-bottom) + 24px); display: flex; flex-direction: column; gap: 12px;
+  -webkit-user-select: text; user-select: text; }
+.mcard { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; }
+.mcard h2 { font-family: var(--serif); font-size: 15px; font-weight: 500; margin: 0 0 8px; }
+.mrow { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; padding: 3px 0; border-bottom: 1px solid var(--line); }
+.mrow:last-child { border-bottom: 0; }
+.mrow .k { color: var(--ink-2); } .mrow .v { font-variant-numeric: tabular-nums; text-align: right; }
+.btn { border: 1px solid var(--line-strong); background: var(--surface-2); color: var(--ink); border-radius: 999px;
+  padding: 10px 16px; font: inherit; font-size: 13px; font-weight: 600; min-height: 44px; }
+.btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.hint { font-size: 12px; color: var(--ink-3); margin-top: 8px; line-height: 1.45; }
+</style>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Nous</h1>
+    <span class="sub" id="subtitle">spike</span>
+    <span class="meter" id="meter">—</span>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" data-screen="week" aria-selected="true">Semaine</button>
+    <button class="tab" role="tab" data-screen="chat" aria-selected="false">Messages</button>
+    <button class="tab" role="tab" data-screen="measures" aria-selected="false">Mesures</button>
+  </nav>
+
+  <section class="screen" id="screen-week" data-active>
+    <div class="weekhead"><div class="gutter"></div><div class="cols" id="weekhead"></div></div>
+    <div class="scroller" id="scroller">
+      <div class="canvas" id="canvas">
+        <div class="gutter" id="gutter"></div>
+        <div class="cols" id="cols"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen chat" id="screen-chat">
+    <div class="msgs" id="msgs"></div>
+    <form class="composer" id="composer">
+      <input id="composer-input" placeholder="Écrire un message" autocomplete="off" enterkeyhint="send">
+      <button type="submit" aria-label="Envoyer">↑</button>
+    </form>
+  </section>
+
+  <section class="screen" id="screen-measures">
+    <div class="measures" id="measures"></div>
+  </section>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
