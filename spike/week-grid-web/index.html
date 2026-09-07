@@ -125,21 +125,33 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 }
 .dcell .w { font-size: 10px; letter-spacing: .04em; color: var(--ink-3); }
 .dcell .n { font-family: var(--serif); font-size: 19px; line-height: 1.05; color: var(--ink); font-variant-numeric: tabular-nums; }
-.dcell .m { display: flex; gap: 2px; align-items: center; justify-content: center; height: 9px; }
+/* la charge d'un jour se dit par l'encre du chiffre, jamais par une jauge */
+.dcell .n[data-ink="vide"] { color: var(--ink-3); }
+.dcell .n[data-ink="leger"] { color: var(--ink-2); }
+.dcell .n[data-ink="charge"] { color: var(--ink); font-weight: 500; }
+.dcell .tod { height: 8px; line-height: 8px; }
 .dcell[data-today] .n { color: var(--accent-ink); }
 .dcell[data-sel] { background: var(--paper); box-shadow: 0 1px 3px rgba(34,60,82,.13); }
 .dcell[data-sel] .w { color: var(--ink-2); }
-.mk { font-style: normal; font-size: 8px; line-height: 1; }
-.mk.dot { width: 4px; height: 4px; border-radius: 50%; display: block; }
-.mk.nous { color: var(--gold); font-size: 9px; }
-.mk.prop { color: var(--plum); font-size: 9px; }
-.mk.today { color: var(--accent); font-size: 9px; }
-.mk.more { color: var(--ink-3); font-size: 11px; }
+
+/* la coupe : une tranche de 7 h à 23 h, les marques posées à leur heure */
+.cut {
+  position: relative; width: 13px; height: 44px; margin-top: 3px; border-radius: 6.5px;
+  background: var(--surface-3);
+}
+.mk { font-style: normal; font-size: 8px; line-height: 1; position: absolute; transform: translate(-50%, -50%); }
+.mk.dot { width: 4px; height: 4px; border-radius: 50%; }
+.mk.nous { color: var(--accent); }
+.mk.prop { color: var(--plum); }
+.mk.today { position: static; transform: none; color: var(--accent); font-size: 8px; }
 
 .daytitle {
-  flex: none; border: 0; background: none; font-family: var(--serif); font-style: italic;
-  font-size: 14px; color: var(--ink-2); padding: 2px 0 8px; text-align: center; width: 100%;
+  flex: none; border: 0; background: none; padding: 4px 12px 8px; text-align: center; width: 100%;
+  display: flex; flex-direction: column; gap: 1px;
 }
+.daytitle .dt { font-family: var(--serif); font-size: 17px; color: var(--ink); }
+.daytitle .ph { font-family: var(--serif); font-style: italic; font-size: 13.5px; color: var(--ink-2); }
+.daytitle .back { font-size: 11px; color: var(--accent-ink); margin-top: 2px; }
 .daycol {
   flex: 1; min-width: 0; position: relative; background: var(--paper);
   border-left: 1px solid var(--line); border-right: 1px solid var(--line);

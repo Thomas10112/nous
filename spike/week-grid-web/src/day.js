@@ -13,6 +13,7 @@
 
 import { DAYS_PER_WEEK, SLOTS_PER_DAY, clamp, formatRange, moveWindow, resizeEnd, resizeStart, slotAt, snapSlot } from './domain/time.js'
 import { layoutDay } from './domain/layout.js'
+import { DAY_END, DAY_START, inkWeight, phraseOfDay } from './domain/phrase.js'
 import { DAY_LABELS, demoWeek } from './data/demo.js'
 import * as meter from './frame-meter.js'
 
@@ -82,23 +83,48 @@ function buildStrip() {
     const b = document.createElement('button')
     b.className = 'dcell'
     b.dataset.day = String(d)
-    b.innerHTML = '<span class="w"></span><span class="n"></span><span class="m"></span>'
+    b.innerHTML =
+      '<span class="w"></span><span class="n"></span>' +
+      '<span class="tod"></span><span class="cut"></span>'
     b.addEventListener('click', () => selectDay(d))
     strip.appendChild(b)
   }
 }
 
-/** Marques d'un jour : ni pastille ni titre, juste ce qui s'y trouve. */
-function marksFor(/** @type {number} */ d) {
-  const of = events.filter((e) => e.window.day === d)
+/**
+ * La coupe d'une journée : une tranche de papier de 7 h à 23 h, où chaque
+ * marque est posée à SON heure. On y lit un rythme — matin creux, soirée
+ * pleine — jamais un titre. Ni jauge, ni pastille, ni fond dégradé : le jury
+ * de conception a écarté les trois, qui font glisser vers le tableau de bord.
+ */
+function cutFor(/** @type {number} */ d) {
+  const all = events
+    .filter((e) => e.window.day === d)
+    .sort((a, b) => a.window.startSlot - b.window.startSlot)
+  // au-delà de quatre marques la tranche devient illisible : on garde le
+  // premier, le dernier et deux du milieu, pour que le rythme reste vrai —
+  // prendre les quatre premiers ferait croire à une journée qui s'arrête à midi
+  const items =
+    all.length <= 4
+      ? all
+      : [0, 1 / 3, 2 / 3, 1].map((f) => all[Math.round(f * (all.length - 1))]).filter((x) => x !== undefined)
   /** @type {string[]} */
   const out = []
-  for (const e of of.slice(0, 4)) {
-    if (e.kind === 'nous') out.push('<i class="mk nous">♥</i>')
-    else if (e.kind === 'proposed') out.push('<i class="mk prop">♡</i>')
-    else out.push(`<i class="mk dot" style="background:${e.personColor ?? 'var(--ink-3)'}"></i>`)
+  /** @type {number[]} */
+  const used = []
+  for (const e of items) {
+    // position réelle dans la plage visible, bornée aux extrémités
+    const t = clamp((e.window.startSlot - DAY_START) / (DAY_END - DAY_START), 0, 1)
+    // deux marques trop proches se décalent latéralement au lieu de fusionner
+    const near = used.filter((y) => Math.abs(y - t) < 0.12).length
+    used.push(t)
+    // décalage en pixels, jamais en pourcentage : la tranche ne fait que 13 px
+    const dx = near === 0 ? 0 : near === 1 ? 3.5 : -3.5
+    const style = `top:${(t * 100).toFixed(1)}%;left:calc(50% + ${dx}px)`
+    if (e.kind === 'nous') out.push(`<i class="mk nous" style="${style}">♥</i>`)
+    else if (e.kind === 'proposed') out.push(`<i class="mk prop" style="${style}">♡</i>`)
+    else out.push(`<i class="mk dot" style="${style};background:${e.personColor ?? 'var(--ink-3)'}"></i>`)
   }
-  if (of.length > 4) out.push('<i class="mk more">·</i>')
   return out.join('')
 }
 
@@ -109,16 +135,23 @@ function paintStrip() {
     const w = cell.querySelector('.w')
     const n = cell.querySelector('.n')
     const m = cell.querySelector('.m')
-    if (w) w.textContent = (DAY_LABELS[d] ?? '').slice(0, 3)
-    if (n) n.textContent = String(date.getDate())
-    if (m) m.innerHTML = (isToday(date) ? '<i class="mk today">♥</i>' : '') + marksFor(d)
+    const tod = cell.querySelector('.tod')
+    const cut = cell.querySelector('.cut')
+    const count = events.filter((e) => e.window.day === d).length
+    if (w) w.textContent = (DAY_LABELS[d] ?? '').slice(0, 1)
+    if (n) { n.textContent = String(date.getDate()); n.setAttribute('data-ink', inkWeight(count)) }
+    if (tod) tod.innerHTML = isToday(date) ? '<i class="mk today">♥</i>' : ''
+    if (cut) cut.innerHTML = cutFor(d)
     cell.toggleAttribute('data-sel', d === day)
     cell.toggleAttribute('data-today', isToday(date))
   })
+
   const date = dateOf(weekOffset, day)
-  titleEl.textContent = isToday(date)
-    ? "aujourd'hui"
-    : date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+  const label = date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+  titleEl.innerHTML =
+    `<span class="dt">${isToday(date) ? "aujourd'hui" : label}</span>` +
+    `<span class="ph">${phraseOfDay(events.filter((e) => e.window.day === day).map((e) => e.window))}</span>` +
+    (isToday(date) ? '' : '<span class="back">revenir à aujourd\'hui</span>')
 }
 
 /** @type {(d: number) => void} */
