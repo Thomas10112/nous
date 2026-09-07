@@ -1,6 +1,9 @@
 # ADR-009 — Zéro dépense : Android natif principal, iPhone en PWA, Supabase gratuit
 
-**Statut** : proposé le 2026-09-06, à valider par le couple (questions [09 §11](../09-zero-depense.md#11-questions-au-couple)).
+**Statut** : proposé le 2026-09-06 ; **cas B confirmé le 2026-09-07** — les appareils sont
+un **Galaxy S24 Ultra** (client React Native) et un **iPhone 16** (client PWA). Reste à
+valider par le couple, après les deux spikes, le périmètre iPhone réduit
+([09 §11](../09-zero-depense.md#11-questions-au-couple)).
 **Remplace** les hypothèses payantes d'ADR-001 (compte Apple), ADR-006 (widgets iOS),
 ADR-007 (APNs) et de la roadmap (règles 6 et 7, Phases 1, 2, 11, 15, 16, 19).
 

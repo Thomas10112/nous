@@ -295,10 +295,13 @@ rattrapage à l'ouverture pour tout ce qui est notifié.
 
 ## 11. Questions au couple
 
-1. **Lequel de vous a un iPhone ?** Modèle et version d'iOS. Si aucun : tout ce document se
-   réduit au cas Android, entièrement gratuit.
+1. ~~Lequel de vous a un iPhone ?~~ **Répondu le 07/09** : sa copine a un **iPhone 16**,
+   lui un **Galaxy S24 Ultra**. C'est le cas B : app React Native d'un côté, PWA de l'autre.
+   Reste à préciser la **version d'iOS** de l'iPhone 16 (Réglages → Général → Informations).
 2. Si iPhone : acceptez-vous **par écrit** un client iPhone « second rang » (pas de widget,
-   pas de notification native, temps réel app ouverte), c'est-à-dire la PWA ?
+   pas de notification native, temps réel app ouverte), c'est-à-dire la PWA ? **En attente** :
+   le spike web ([`spike/week-grid-web`](../spike/week-grid-web/README.md)) existe pour
+   répondre en connaissance de cause, sur son téléphone à elle.
 3. Le dépôt GitHub est **public** : le laisser ainsi (minutes illimitées, Releases sans
    jeton) ou le passer en privé ?
 4. Un **profil de paiement Google** (nom légal + adresse, sans carte a priori) pour le

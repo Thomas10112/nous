@@ -1,10 +1,15 @@
 # Spike — vue Semaine (Phase 1, porte de décision)
 
-Projet Expo **jetable**. Il ne sert qu'à répondre à une question : sur vos deux
-téléphones, une grille de 48 créneaux × 7 jours avec long-press → drag → accrochage
-30 min → poignées → pinch, et un scroll qui ne se bat pas avec le drag, est-ce que
-« ça sent l'app » ou « ça sent le site » ? Le code est jeté ensuite ; on garde la
-décision et les réglages de gestes ([docs/01-stack.md §6](../../docs/01-stack.md)).
+Projet Expo **jetable**. Il ne sert qu'à répondre à une question : une grille de
+48 créneaux × 7 jours avec long-press → drag → accrochage 30 min → poignées →
+pinch, et un scroll qui ne se bat pas avec le drag, est-ce que « ça sent l'app »
+ou « ça sent le site » ? Le code est jeté ensuite ; on garde la décision et les
+réglages de gestes ([docs/01-stack.md §6](../../docs/01-stack.md)).
+
+Ce spike-ci vise le **Galaxy S24 Ultra**, qui recevra l'application React Native.
+L'iPhone 16 recevra la PWA : son jumeau web est dans
+[`../week-grid-web`](../week-grid-web/README.md), et c'est **lui** qu'il faut
+juger sur l'iPhone.
 
 **Il se teste sans rien payer** : via l'app Expo Go (gratuite) sur les deux téléphones,
 iPhone compris, sans compte Apple Developer ([docs/09 §3](../../docs/09-zero-depense.md)).
@@ -67,7 +72,7 @@ Aucun build iOS n'est nécessaire pour le spike ; Expo Go suffit à juger les ge
 
 | Critère | Comment |
 | ------- | ------- |
-| 0 frame > 16 ms pendant un drag sur l'Android du couple (build release) | le compteur en haut à droite, remis à zéro à chaque geste |
+| 0 frame au-delà du budget de l'écran, sur le S24 Ultra en build release | le compteur en haut à droite : il mesure la cadence réelle (≈ 120 Hz → budget 8,3 ms) et se remet à zéro à chaque geste |
 | 0 geste perdu sur 50 essais | 25 drags de bloc, 15 redimensionnements, 10 créations ; noter chaque raté |
 | Long-press puis déplacement < 8 px ne bloque pas le scroll | poser le doigt, bouger un peu avant 350 ms : la grille doit défiler |
 | Drag au bord fait défiler | traîner un bloc vers le haut/bas de l'écran |

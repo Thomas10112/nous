@@ -165,22 +165,37 @@ plus risqué de la stack tient, et lever les prérequis. **Point de validation.*
   réglage « Max rows » de l'API (≥ 1000), mode réellement utilisé par le couple
   (`VITE_SUPABASE_*` du déploiement). Ces chiffres dimensionnent la migration et le plan
   Supabase (T9).
-- **Spike de deux semaines — la porte de décision** ([01 §6](01-stack.md)) : projet Expo
-  jetable (SDK courant épinglé), vue Semaine 48 créneaux × 7 jours : long-press 350 ms →
-  soulèvement haptique → drag sur worklet → accrochage 30 min → poignées → pinch de
-  hauteur de créneau, scroll qui ne se bat pas avec le drag, colonne focus en portrait
-  ([06 §3.7, §4](06-moteur-calendrier.md)) ; plus un écran de messagerie factice pour le
-  clavier. Lancé via **Expo Go** sur les deux téléphones (gratuit, sans compte Apple ;
-  mesure de référence Android sur un build release local). **Critères** : 0 frame
-  > 16 ms pendant le drag sur l'Android du couple (`useFrameCallback`), 0 geste perdu sur
-  50 essais, clavier sans saut, et le verdict du couple : « ça sent l'app » ou « ça sent
-  le site ». Le code est jeté ; on garde la décision et les réglages de gestes.
+- **Deux spikes — la porte de décision** ([01 §6](01-stack.md)), un par client, parce que
+  les deux téléphones ne recevront pas le même : vue Semaine 48 créneaux × 7 jours,
+  long-press 350 ms → soulèvement → accrochage 30 min → poignées → pinch de hauteur de
+  créneau, scroll qui ne se bat pas avec le drag, colonne focus en portrait
+  ([06 §3.7, §4](06-moteur-calendrier.md)), plus un écran de messagerie factice pour le
+  clavier.
+  - [`spike/week-grid`](../spike/week-grid/README.md) — **React Native**, jeté ensuite,
+    lancé via **Expo Go** (gratuit, sans compte Apple) ; mesure de référence sur un build
+    release local sur le **S24 Ultra**.
+  - [`spike/week-grid-web`](../spike/week-grid-web/README.md) — **web**, même logique de
+    domaine, gestes en pointer events ; c'est le futur client de l'**iPhone 16**, donc ce
+    code-là ne sera pas jeté mais repris par `apps/web`. Son onglet **Mesures** répond en
+    plus aux inconnues de [09 §10](09-zero-depense.md) : fréquence d'écran, quota de
+    stockage, notification sans serveur, badge, hors ligne.
+
+  **Critères** : 0 frame au-delà du **budget de l'écran mesuré par le spike** (≈ 8,3 ms à
+  120 Hz sur le S24 Ultra, 16,7 ms à 60 Hz sur l'iPhone 16 — le compteur affiche le budget
+  qu'il a mesuré), 0 geste perdu sur 50 essais, aucun menu contextuel iOS à l'appui long,
+  la page qui ne zoome pas au pincement, clavier sans saut, et le verdict du couple sur
+  **chacun des deux clients** : « ça sent l'app » ou « ça sent le site ».
 
 **Fini quand** : stack validée par écrit après le spike ; appareils identifiés (dont la
 réponse iPhone / pas d'iPhone) ; projet Supabase joignable ; les deux `auth.uid()` connus ;
 volumes mesurés ; ADR-009 accepté par le couple.
 
 **Effort.** 10–12 jours (dont le spike).
+
+**État au 07/09/2026.** Appareils connus (T10, T13) : **Galaxy S24 Ultra** et **iPhone 16**,
+donc le **cas B** d'ADR-009 — la variante iPhone (§7) s'applique et le spike web existe
+(`spike/week-grid-web`, typé, testé, publié). Reste : lancer les deux spikes sur les deux
+téléphones et écrire les deux verdicts.
 
 **État au 06/09/2026.** Stack tranchée sur dossier ([01](01-stack.md), ADR-001) ; projet
 Supabase restauré et données réelles mesurées ([08](08-mesures-phase1.md) : 10 lignes,
