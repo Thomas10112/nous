@@ -311,3 +311,67 @@ rattrapage à l'ouverture pour tout ce qui est notifié.
    hebdomadaire ?
 7. Les originaux de vos photos et vidéos restent dans la **galerie du téléphone** (l'app ne
    garde que des vignettes et des photos compressées) : d'accord ?
+
+## 12. Les deux téléphones du couple
+
+> Relevé le 07/09/2026. Lui : **Samsung Galaxy S24 Ultra**. Elle : **iPhone 16** (modèle de
+> base). C'est le cas B d'ADR-009. Instruction par deux chercheurs et deux contre-expertises,
+> sources 2025-2026 ; les points marqués **(à vérifier)** demandent une manipulation sur
+> l'appareil.
+
+### 12.1 Galaxy S24 Ultra — l'app React Native
+
+| Point | Ce que ça change |
+| ----- | ---------------- |
+| **Auto Blocker** (Samsung) | S'il est actif, **aucun APK ne s'installe**, ni depuis Chrome ni depuis Obtainium, et le menu « Installer des applications inconnues » est lui-même grisé. C'est le point de défaillance unique de tout le plan Android. Il est activé d'usine seulement sur les appareils livrés en One UI 6.1.1 ou plus récent ; le S24 Ultra est sorti en One UI 6.1, donc il est probablement inactif — **à vérifier avant tout le reste**. One UI 8.5 propose une pause de 30 minutes, qui est le bon mode d'emploi : ouvrir la fenêtre, installer, laisser la protection revenir seule. |
+| **`USE_EXACT_ALARM` au lieu de `SCHEDULE_EXACT_ALARM`** | Décision d'architecture, pas d'optimisation : sur la série S24, un refus de `SCHEDULE_EXACT_ALARM` fait **disparaître définitivement** l'entrée « Alarmes et rappels » des réglages de l'app, ce qui casse les rappels sans retour possible. `USE_EXACT_ALARM` est accordée à l'installation, convient à une app de calendrier, et la politique du Play Store qui la réserve ne s'applique pas puisque Nous ne passe pas par Play. |
+| **Veille des applications** | « Applications en veille profonde » = **aucune notification** tant que l'app n'est pas ouverte à la main, et « Mettre en veille les applications inutilisées » est actif par défaut et endort ce qui n'a pas servi depuis ~30 jours. Une app de couple est une cible naturelle. Nous doit être dans « Applications jamais en veille », en « Sans restriction », avec la batterie adaptative désactivée — et **re-vérifiée après chaque mise à jour One UI**, qui peut réinscrire l'app dans les listes. |
+| **120 Hz** | L'écran est un LTPO 1–120 Hz : pendant un glissé, le budget par frame est de **8,3 ms**, pas 16,7. Le critère du spike devient « 0 frame au-delà du budget mesuré », et aucun recalcul de mise en page complet ne peut avoir lieu sur le thread JavaScript pendant un geste. |
+| **Résolution FHD+ d'usine** | Le téléphone sort en 2340 × 1080, pas en QHD+. La densité vue par React Native diffère entre les deux modes : **figer le mode** avant de calibrer les hauteurs de créneau, sinon la grille se décale. |
+| **One UI 8.5 / Android 16** | Cible de compilation 36. Le S24 Ultra a 7 ans de mises à jour promises : plateforme stable jusqu'en 2031, contrairement au flanc iPhone. |
+| **Widgets** | `react-native-android-widget` : toute modification du widget impose un **nouveau binaire** (pas de mise à jour JavaScript), donc un nouveau cycle APK. Les grilles One UI varient (4×5, 4×6, 5×5, 5×6) : widget responsive obligatoire, jamais de grille supposée. |
+| **Priorité des messages** | Les messages du partenaire partent en **priorité haute** depuis la fonction Edge, sinon Doze les retient. Et les rappels horodatés passent par `AlarmManager` exact, jamais par WorkManager (dont les délais glissent). |
+| Sideload | Play Protect avertit puis laisse passer. Les « paramètres restreints » d'Android 13+ ne concernent que l'accessibilité et l'écoute des notifications : Nous n'en a pas besoin, rien à débloquer. |
+
+### 12.2 iPhone 16 — la PWA
+
+| Point | Ce que ça change |
+| ----- | ---------------- |
+| **Écran 60 Hz** | L'iPhone 16 de base n'a pas ProMotion. Or Safari plafonne le rendu web à 60 fps, et ce plafond ne se lève que sur du matériel 120 Hz. **Sur ce téléphone précis, la PWA n'est donc pas désavantagée par rapport à une app native** : 16,7 ms de budget des deux côtés. C'est l'argument qui rend le choix PWA confortable plutôt que subi. |
+| **iOS 26.6.1**, iOS 27 attendu vers le **14 septembre 2026** | **Ne pas installer iOS 27 le jour de sa sortie.** Chaque version majeure embarque un WebKit neuf, et les régressions de PWA observées en 2026 (clavier, viewport, gel) ont mis 7 semaines à être corrigées. On teste, puis on met à jour. |
+| **Le manifeste reste obligatoire** | iOS 26 fait de tout site une web app, mais **sans `display: standalone` dans le manifeste, `pushManager` est indéfini** et le push est impossible. Et iOS ignore les icônes du manifeste dès qu'un `apple-touch-icon` existe : il faut un PNG 180 × 180 **opaque**. |
+| **Aucune notification locale planifiée sur le web** | Il n'existe rien de tel dans les navigateurs, et les service workers iOS sont gelés en arrière-plan. **Tous** les rappels de l'iPhone viennent donc du serveur, à l'heure exacte (`pg_cron` → fonction Edge → Web Push). Corollaire assumé : **pas de rappel hors ligne sur l'iPhone**. |
+| **Révocation du push** | WebKit coupe l'abonnement dès qu'un push n'affiche pas de notification. Le gestionnaire doit être exactement `event.waitUntil(registration.showNotification(...))`, sans branche conditionnelle. **Declarative Web Push** (iOS ≥ 18.4) supprime le risque à la racine : le système affiche lui-même. |
+| **Abonnements qui expirent** | Des endpoints iOS deviennent invalides au bout d'une à deux semaines, et réinstaller la web app détruit l'abonnement. Il faut revalider à chaque lancement et prévoir un bouton « Réparer les notifications ». |
+| **Gestes** | Le menu contextuel revient à l'appui long malgré `-webkit-touch-callout: none` (bug ouvert d'iOS 26.1) : il faut aussi `user-select: none`, `touch-action`, et un écouteur `contextmenu` qui annule. Le pincement ne se désactive pas par le viewport depuis iOS 10 : seul `touch-action` et des écouteurs tactiles non passifs le peuvent. Le spike web applique déjà tout cela. |
+| **Stockage** | Les chiffres publics se contredisent (WebKit et MDN annoncent des pourcentages inversés, contradiction ouverte depuis juillet 2025). Seule la mesure sur l'appareil compte — c'est ce que fait l'onglet Mesures du spike. Une web app d'écran d'accueil a son propre compteur d'inactivité : ouverte tous les jours, elle n'est pas évincée. |
+| **« Effacer historique et données de sites »** | Web app et Safari partagent au minimum le service worker et le cache. Cette action peut vider l'app hors ligne **sans avertissement**. À présenter comme un bouton à ne jamais toucher. |
+| **Badge d'icône** | `navigator.setAppBadge` fonctionne sur les web apps d'écran d'accueil, à condition que la permission de notification soit accordée. C'est le **seul substitut de widget** possible sur l'iPhone. |
+| **La voie native est close, définitivement** | Un compte Apple gratuit n'a pas la capability Push Notifications. Même un sideload parfaitement automatisé (SideStore, LiveContainer, rafraîchissement sur l'appareil sans ordinateur) ne donnerait **ni notification distante ni widget** — c'est-à-dire exactement les deux besoins. Et le DMA n'ouvre rien : publier dans une boutique alternative exige la notarisation, donc l'adhésion payante. |
+
+### 12.3 Réglages à faire sur chaque téléphone
+
+**Sur le S24 Ultra, avant tout le reste :**
+
+1. Réglages → Sécurité et confidentialité → **Auto Blocker** : relever s'il est actif. S'il l'est, utiliser la pause de 30 minutes au moment d'installer, à la maison.
+2. Réglages → Applications → Accès spécial → **Installer des applications inconnues** → autoriser **Obtainium** seulement.
+3. Réglages → Batterie → Limites d'utilisation en arrière-plan → **Applications jamais en veille** → ajouter Nous.
+4. Réglages → Applications → Nous → Batterie → **Sans restriction**.
+5. Réglages → Batterie → Autres paramètres → désactiver la **batterie adaptative**.
+6. Refaire les points 3 à 5 **après chaque mise à jour One UI**.
+
+**Sur l'iPhone 16 :**
+
+1. Ajouter le site à l'écran d'accueil en laissant **« Ouvrir comme web app »** activé.
+2. Accorder la permission de notification **depuis un bouton**, jamais au chargement.
+3. Réglages → Notifications → Nous : désactiver le **Résumé programmé**, vérifier qu'aucun mode de Concentration ne la filtre.
+4. **Ne jamais** utiliser Réglages → Safari → Effacer historique et données de sites.
+5. **Attendre le feu vert** avant d'installer une mise à jour majeure d'iOS.
+
+### 12.4 Ce que le spike doit rapporter
+
+Le spike web ([`spike/week-grid-web`](../spike/week-grid-web/README.md)) a un onglet
+**Mesures** qui répond, chiffres à l'appui, à ce que la documentation publique ne tranche
+pas : fréquence réelle de l'écran, quota et persistance du stockage, notification affichée
+sans serveur (app ouverte, en arrière-plan, fermée), badge, marges sûres, mode web app,
+version du système, et comportement hors ligne. Un bouton copie le rapport.

@@ -60,8 +60,9 @@ Moodboard (en logique), les tokens et les icônes. On réécrit tout le rendu (c
 toute façon nécessaire : le kit web est 100 % DOM/CSS/framer-motion, D13–D19). On
 apprend Reanimated/Gesture Handler et un peu de Swift/Kotlin pour les widgets. Les
 pièges connus : versions à aligner (Expo SDK ↔ Reanimated ↔ worklets ↔ nitro-modules ↔
-gorhom ≥ 5.2.14 pour React 19 ↔ compressor 2.x), **SDK 56 et `expo@57.0.x < 17` à
-proscrire** (régression mémoire Hermes V1 sur les worklets), builds de développement
+gorhom ≥ 5.2.14 pour React 19 ↔ compressor 2.x), **`expo@57.0.x < 17` à
+proscrire** (régression Hermes : démarrage des builds de développement 20 à 100 fois plus
+lent, expo #48298, corrigée par RN 0.86.3), builds de développement
 obligatoires (pas Expo Go dès qu'on a des modules natifs), **construits localement ou en
 CI** (EAS Build en secours seulement — contrainte zéro dépense, §8), Maestro sans iPhone physique, taille d'équipe = 1
 donc discipline sur les mises à jour SDK (une par an suffit).
@@ -85,7 +86,7 @@ pont natif, pour un résultat que le brief refuse.
 - Expo SDK 57 (React Native 0.86, React 19.2, New Architecture, Hermes v1), Expo Router —
   version **épinglée au moment de `create-expo-app`**, jamais planifiée sur un numéro ;
 - `expo@^57.0.17` épinglé (les versions antérieures, SDK 56 compris, portent une
-  régression mémoire Hermes V1 sur les worklets) ;
+  régression Hermes de démarrage, expo #48298) ;
 - `expo-sqlite` + Drizzle ORM ; `expo-sqlite/kv-store` pour les préférences (pas de MMKV :
   un module natif Nitro de moins) ; session par `LargeSecureStore` (clé AES dans
   `expo-secure-store`, qui plafonne à 2 Ko par valeur, session chiffrée dans `kv-store`) ;

@@ -225,8 +225,8 @@ pas, et que l'app se connecte à Supabase sur les deux téléphones.
   qui touche la base ; APK release arm64-v8a signé, publié en GitHub Release).
 - `apps/web/**` ← `git mv` ; `supabase/legacy/{schema,auth}.sql`.
 - `apps/mobile/` ← `create-expo-app` avec **`expo@^57.0.17`** (RN ≥ 0.86.3 : les versions
-  antérieures, SDK 56 compris, portent une régression mémoire Hermes V1 sur les worklets
-  — le cœur du calendrier), Expo Router, TypeScript ; `app.config.ts` (scheme `nous`,
+  antérieures portent une régression Hermes qui rend le démarrage des builds de
+  développement 20 à 100 fois plus lent — expo #48298, corrigé par RN 0.86.3), Expo Router, TypeScript ; `app.config.ts` (scheme `nous`,
   bundle ids, plugins, lecture de `EXPO_PUBLIC_SUPABASE_URL` /
   `EXPO_PUBLIC_SUPABASE_ANON_KEY` par profil), `eas.json` (`development` / `preview` /
   `production`) ; `.npmrc` racine `node-linker=hoisted` ; `pnpm.overrides` garantissant
@@ -426,6 +426,9 @@ sur données de démonstration (repositories en mémoire).
   (déplacés depuis les maquettes, sans changement visuel).
 - `features/home/{screen/HomeScreen.tsx,ui/TodayCard.tsx,ui/SoonList.tsx,ui/EmptyToday.tsx,hooks/useAgenda.ts}`,
   `app/(tabs)/index.tsx`, `app/(tabs)/calendar/{index,[view]}.tsx`.
+- **Avant de calibrer les hauteurs de créneau**, figer le mode de résolution du S24 Ultra
+  (il sort d'usine en FHD+, pas en QHD+ : la densité vue par React Native diffère et la
+  grille se décalerait) et le noter dans le README.
 
 **Tests.** Contrat de [06 §5](06-moteur-calendrier.md) : mise en page, bandes sur ligne de
 mois, DST, **égalité worklets / domaine sur 1 000 cas**, `agendaFor`, gestes sur l'Android
@@ -494,7 +497,10 @@ ici aux rappels J-7 / J-1, puis aux habitudes en Phase 12).
 
 **Fichiers.** `packages/domain/src/countdowns/{target,label,reminders,widgetEntries}.ts`,
 **`domain/notifications/scheduler.ts`** (horizon 14 j, plafond 60, appareil élu),
-**`packages/data/src/push/LocalScheduler.ts`** (`expo-notifications`, local seulement) ;
+**`packages/data/src/push/LocalScheduler.ts`** (`expo-notifications`, local seulement,
+**`USE_EXACT_ALARM` déclarée dans `app.json`** et non `SCHEDULE_EXACT_ALARM` : sur la série
+S24, un refus de cette dernière fait disparaître définitivement l'entrée « Alarmes et
+rappels » et casse les rappels sans retour — [09 §12.1](09-zero-depense.md)) ;
 `features/moments/{ui/Constellation,ui/MomentStar,ui/OccurrenceScreen,ui/ChapterList,ui/ChapterEditor,ui/MoodPicker,ui/MomentSheet,ui/AttachEvent}.tsx` ;
 `features/countdowns/{ui/CountdownCard,ui/ReminderSettings,hooks/useNextDates}.ts` ;
 `app/(tabs)/memories/{index,moments/[momentId]/[year]}.tsx`, `app/sheets/{moment,countdown}/*` ;
@@ -511,7 +517,10 @@ un chapitre, y attacher un événement ; l'item apparaît dans Jour, Mois, Anné
 ≥ 44 pt sur `MomentStar`.
 
 **Fini quand** : constellation avec les moments réels du couple ; compte à rebours de
-l'accueil juste à minuit ; notification locale J-1 reçue en mode avion.
+l'accueil juste à minuit ; notification locale J-1 reçue en mode avion **sur le S24 Ultra**.
+Côté **iPhone**, il n'existe aucune notification locale planifiée sur le web : ses rappels
+sont émis par le serveur en Phase 15, et **il n'y a pas de rappel hors ligne sur l'iPhone**
+— limite assumée, à écrire dans l'écran Réglages.
 
 **Effort.** 8–10 jours.
 
@@ -616,8 +625,14 @@ localement, Declarative Web Push si iOS ≥ 18.4, jamais de push silencieux).
 
 **Fichiers.** `supabase/migrations/0011_notification_triggers.sql` (insertion sur message,
 proposition, réponse, habitude faite, photos ajoutées à une occurrence ; respect des
-préférences et des heures calmes), `supabase/functions/push/index.ts` (webhook → FCM HTTP v1 en priorité haute et
-texte générique ; Web Push VAPID pour les abonnements de la PWA), `packages/data/src/push/{PushRegistrar (register_push_token),handlers}.ts`,
+préférences et des heures calmes ; **plus les rappels de l'iPhone**, que `pg_cron` déclenche
+à l'heure dite puisque le web ne sait pas planifier localement), `supabase/functions/push/index.ts` (webhook → FCM HTTP v1 en priorité haute et
+texte générique ; Web Push VAPID pour les abonnements de la PWA), `packages/data/src/push/{PushRegistrar (register_push_token),handlers,WebPushSubscription}.ts`
+(**revalidation de l'abonnement à chaque lancement** — les endpoints iOS expirent en une à
+deux semaines et réinstaller la web app détruit l'abonnement — plus un bouton « Réparer les
+notifications » ; gestionnaire `push` du service worker écrit **exclusivement** en
+`event.waitUntil(showNotification(...))`, sinon WebKit révoque l'abonnement ; format
+**Declarative Web Push** quand iOS ≥ 18.4, repli classique sinon),
 `features/settings/ui/NotificationPreferences.tsx`, `app/settings/notifications.tsx`,
 routage des liens profonds dans `app/_layout.tsx`, suppression de la bannière si l'écran
 concerné est au premier plan.
@@ -654,7 +669,11 @@ app ouverte.
 **Contenu.** Onboarding mobile ; écran Réglages complet : **Affichage** (`DisplayPreferences`
 : densité, animations, informations visibles, vue par défaut, semaine, plage horaire,
 grain), Présence, Notifications, Statistiques masquées, Corbeille, Synchronisation
-(échecs, horloge), Données (export JSON, import) ; audit reduced-motion écran par
+(échecs, horloge), Données (export JSON, import), **Diagnostic** — un écran qui affiche
+l'état réel de ce qui rend l'app muette et que personne ne pense à vérifier : autorisation
+de notification, alarmes exactes, exemption de veille Samsung, jeton push enregistré, mode
+web app et abonnement Web Push côté iPhone, avec un lien direct vers chaque page de
+réglages ([09 §12.3](09-zero-depense.md)) ; audit reduced-motion écran par
 écran ; haptiques ; états vides et erreurs ; transitions partagées (vignette →
 lightbox) ; revue de la copy avec le couple ; palette « bleu » et sombre partout ;
 « la demande » portée en natif (bonus).

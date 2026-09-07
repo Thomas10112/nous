@@ -222,6 +222,15 @@ scroller.addEventListener('pointercancel', onPointerUp)
 // écouteur NON passif : c'est lui qui reprend le défilement au navigateur
 scroller.addEventListener('touchmove', (e) => { if (drag || pinch || pager?.engaged) e.preventDefault() }, { passive: false })
 scroller.addEventListener('contextmenu', (e) => e.preventDefault())
+// Safari : le pincement passe aussi par des événements propriétaires, et le menu
+// contextuel réapparaît malgré -webkit-touch-callout sur iOS 26.1 (bug ouvert
+// forums Apple 808606). Ceinture et bretelles.
+document.addEventListener('contextmenu', (e) => {
+  if (/** @type {HTMLElement} */ (e.target).closest('.scroller')) e.preventDefault()
+})
+for (const type of ['gesturestart', 'gesturechange', 'gestureend']) {
+  scroller.addEventListener(type, (e) => e.preventDefault())
+}
 
 /** @type {(e: PointerEvent) => void} */
 function onPointerDown(e) {

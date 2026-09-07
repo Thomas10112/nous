@@ -213,13 +213,15 @@ function render() {
   queueMicrotask(() => {
     rendering = false
     root.replaceChildren(
-      card('Écran', [
+      card('Écran et système', [
         ['Fréquence mesurée', results['Fréquence'] ?? '…'],
         ['Budget par frame', results['Budget'] ?? '…'],
         ['Densité de pixels', String(window.devicePixelRatio)],
         ['Fenêtre', `${window.innerWidth} × ${window.innerHeight} px`],
         ['Marges sûres (haut / bas)', results['Marges'] ?? '—'],
         ['Mode web app', results['Standalone'] ?? '—'],
+        ['Push disponible', results['Push'] ?? '…'],
+        ['Système', results['Système'] ?? '…'],
       ], undefined,
         'Faites d’abord un drag dans l’onglet Semaine : la fréquence se mesure toute seule.'),
 
@@ -247,7 +249,7 @@ function render() {
         { label: 'Badge 3', fn: () => badge(3) },
         { label: 'Effacer le badge', fn: () => badge(null) },
       ],
-        'Sur iPhone, ces boutons ne marchent que si la page a été ajoutée à l’écran d’accueil et ouverte depuis là. « Dans 30 s » sert à montrer la limite : si vous quittez l’app, la notification ne part pas — c’est pourquoi les rappels devront venir du serveur.'),
+        'Sur iPhone, ces boutons ne marchent que si la page a été ajoutée à l’écran d’accueil et ouverte depuis là. Essayez « Notifier maintenant » dans trois situations et notez ce que vous voyez : app ouverte, app en arrière-plan (bouton Accueil juste avant), app fermée (balayée). « Dans 30 s » montre la limite : verrouillez l’écran, la notification n’arrivera pas — c’est pourquoi les rappels de l’iPhone devront venir du serveur.'),
 
       card('Application installée', [
         ['Service worker', results['SW'] ?? '…'],
@@ -277,6 +279,9 @@ export async function refresh() {
   results['Budget'] = m.hz ? `${m.budgetMs.toFixed(1)} ms` : '—'
   results['Marges'] = safeAreas()
   results['Standalone'] = isStandalone() ? 'oui (écran d’accueil)' : 'non (onglet du navigateur)'
+  const reg0 = await navigator.serviceWorker?.getRegistration()
+  results['Push'] = reg0 && 'pushManager' in reg0 ? 'oui (pushManager exposé)' : 'non'
+  results['Système'] = navigator.userAgent.slice(0, 120)
   const e = await estimate()
   results['Utilisé'] = e.quota ? mb(e.usage) : 'indisponible'
   results['Quota'] = e.quota ? gb(e.quota) : 'indisponible'
