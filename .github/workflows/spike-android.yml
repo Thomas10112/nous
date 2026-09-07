@@ -40,15 +40,15 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Dépendances
+      - name: Dependances
         run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
 
-      - name: Générer le projet natif
+      - name: Generer le projet natif
         run: npx expo prebuild --platform android --no-install
 
-      # Une seule architecture (arm64-v8a) : c'est celle du S24 Ultra, et cela
-      # divise par deux le temps de compilation C++ et la taille du fichier.
-      - name: Compiler l'APK
+      # Une seule architecture (arm64-v8a) : celle du S24 Ultra. Cela divise
+      # par deux le temps de compilation C++ et la taille du fichier.
+      - name: Compiler l APK
         working-directory: spike/week-grid/android
         run: ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon
 
@@ -58,7 +58,7 @@ jobs:
           SRC=$(find android/app/build/outputs/apk/release -name '*.apk' | head -1)
           test -n "$SRC" || { echo "aucun APK produit"; exit 1; }
           mkdir -p out
-          cp "$SRC" "out/nous-maquette-semaine.apk"
+          cp "$SRC" out/nous-maquette-semaine.apk
           SIZE=$(du -h out/nous-maquette-semaine.apk | cut -f1)
           echo "taille=$SIZE" >> "$GITHUB_OUTPUT"
           echo "APK : $SIZE"
@@ -69,23 +69,14 @@ jobs:
           path: spike/week-grid/out/nous-maquette-semaine.apk
           retention-days: 14
 
-      - name: Publier la pré-version
+      - name: Publier la pre-version
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="maquette-android-${{ github.run_number }}"
-          gh release create "$TAG" \
+          gh release create "maquette-android-${{ github.run_number }}" \
             out/nous-maquette-semaine.apk \
             --repo "${{ github.repository }}" \
             --target "${{ github.sha }}" \
             --title "Maquette Semaine pour Android (${{ steps.apk.outputs.taille }})" \
             --prerelease \
-            --notes "Maquette jetable de la vue Semaine, à installer sur le Galaxy S24 Ultra pour juger les gestes et la fluidité. Ce n'est pas l'application.
-
-**Avant d'installer**, dans Réglages → Sécurité et confidentialité, vérifier qu'**Auto Blocker** et **Advanced Protection** sont éteints : sinon aucune installation n'est possible, et le réglage « installer des applications inconnues » est grisé.
-
-**Installer** : télécharger le fichier depuis le téléphone, ouvrir, autoriser Chrome à installer des applications inconnues, puis « Installer quand même » sur l'avertissement Play Protect.
-
-**Ce qu'on mesure** : le compteur en haut à droite affiche la fréquence de l'écran et le budget par image (8,3 ms à 120 Hz). Appui long puis glissé, poignées, pincement, balayage horizontal pour changer de semaine, appui sur un jour pour élargir sa colonne. Détail dans \`spike/week-grid/README.md\`.
-
-L'équivalent web, pour l'iPhone comme pour l'Android, se teste sans rien installer."
+            --notes-file "$GITHUB_WORKSPACE/.github/release-notes/maquette-android.md"
