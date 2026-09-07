@@ -530,6 +530,13 @@ sont émis par le serveur en Phase 15, et **il n'y a pas de rappel hors ligne su
 
 ### Phase 11 — Souvenirs et médias
 
+**Côté iPhone (PWA).** Trois limites relevées en [09 §12.2](09-zero-depense.md) commandent la
+conception : la lecture vidéo est signalée cassée dans les web apps installées depuis
+iOS 26.0.1 (prévoir l'ouverture dans Safari en repli, et **tester avant de promettre**),
+l'autorisation caméra n'est pas conservée, et l'envoi d'une photo peut recharger la page —
+donc passer par le sélecteur de fichiers et **sauvegarder l'état avant l'envoi**. Le stockage
+local y est un cache reconstructible, jamais la source de vérité.
+
 **Politique médias (ADR-009, zéro dépense).** L'app stocke des vignettes (≤ 200 Ko) et des
 photos compressées (≤ 1 Mo) ; les originaux et les vidéos restent dans la galerie du
 téléphone ; vidéos dans l'app ≤ 10 s / 5 Mo, purgées après 12 mois ; upload standard avec
@@ -638,6 +645,14 @@ notifications » ; gestionnaire `push` du service worker écrit **exclusivement*
 `features/settings/ui/NotificationPreferences.tsx`, `app/settings/notifications.tsx`,
 routage des liens profonds dans `app/_layout.tsx`, suppression de la bannière si l'écran
 concerné est au premier plan.
+
+**Pièges de la chaîne Web Push** ([09 §12.2](09-zero-depense.md)) : le claim `sub` du jeton
+VAPID doit être exactement `mailto:…` ou `https://…` (un espace ou des chevrons suffisent à
+provoquer un 403), l'`exp` ne dépasse pas 24 h ; `pushsubscriptionchange` n'existe pas sur
+iOS, donc l'abonnement se revalide à chaque lancement avec un bouton « Réactiver les
+notifications » ; et **une notification web n'atteint pas un iPhone verrouillé au-delà d'une
+dizaine de minutes de veille** — elle tombe au déverrouillage. Cette latence est une
+propriété du système, pas un défaut à corriger : elle doit être dite dans l'onboarding.
 
 **Fini quand** : 5 payloads de référence verts en test Deno ; tap → route attendue sur
 Android et dans la PWA ; préférence « propositions » désactivée → 0 push sur 10 essais ; heures calmes
