@@ -1,10 +1,12 @@
 /* Coquille : trois onglets, un service worker, et rien d'autre. */
 
-import { mountWeek } from './week.js'
+import { mountDay, today } from './day.js'
+import { mountWeek, revealWeek } from './week.js'
 import { mountChat } from './chat.js'
 import { mountMeasures, refresh } from './diagnostics.js'
 
 const screens = {
+  day: /** @type {HTMLElement} */ (document.getElementById('screen-day')),
   week: /** @type {HTMLElement} */ (document.getElementById('screen-week')),
   chat: /** @type {HTMLElement} */ (document.getElementById('screen-chat')),
   measures: /** @type {HTMLElement} */ (document.getElementById('screen-measures')),
@@ -16,10 +18,13 @@ document.querySelectorAll('.tab').forEach((tab) => {
     document.querySelectorAll('.tab').forEach((t) => t.setAttribute('aria-selected', String(t === tab)))
     for (const [key, el] of Object.entries(screens)) el.toggleAttribute('data-active', key === name)
     if (name === 'measures') refresh()
+    if (name === 'week') requestAnimationFrame(revealWeek)
   })
 })
 
+mountDay()
 mountWeek()
+document.getElementById('daytitle')?.addEventListener('click', today)
 mountChat()
 mountMeasures()
 

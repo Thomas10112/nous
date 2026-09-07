@@ -50,8 +50,8 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 /* ---------- onglets ---------- */
 .tabs { display: flex; gap: 6px; padding: 8px 12px; background: var(--bg); flex: none; }
 .tab {
-  flex: 1; border: 0; border-radius: 999px; padding: 9px 0; font: inherit; font-size: 13px; font-weight: 600;
-  background: var(--surface-3); color: var(--ink-2); min-height: 40px;
+  flex: 1; border: 0; border-radius: 999px; padding: 7px 0; font: inherit; font-size: 12.5px; font-weight: 600;
+  background: var(--surface-3); color: var(--ink-2); min-height: 36px;
 }
 .tab[aria-selected="true"] { background: var(--accent); color: #fff; }
 .screen { flex: 1; min-height: 0; display: none; flex-direction: column; }
@@ -116,6 +116,35 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 .handle[data-edge="start"] { top: -6px; } .handle[data-edge="end"] { bottom: -6px; }
 .handle::after { content: ''; position: absolute; left: -8px; right: -8px; top: -16px; bottom: -16px; }
 
+/* ---------- vue Jour : bandeau de dates ---------- */
+.daystrip { display: flex; gap: 2px; padding: 6px 8px 2px; flex: none; will-change: transform; }
+.dcell {
+  flex: 1 1 0; min-width: 0; border: 0; background: none; font: inherit; padding: 6px 0 5px;
+  border-radius: 14px; display: flex; flex-direction: column; align-items: center; gap: 1px;
+  color: var(--ink-2); transition: background .18s ease;
+}
+.dcell .w { font-size: 10px; letter-spacing: .04em; color: var(--ink-3); }
+.dcell .n { font-family: var(--serif); font-size: 19px; line-height: 1.05; color: var(--ink); font-variant-numeric: tabular-nums; }
+.dcell .m { display: flex; gap: 2px; align-items: center; justify-content: center; height: 9px; }
+.dcell[data-today] .n { color: var(--accent-ink); }
+.dcell[data-sel] { background: var(--paper); box-shadow: 0 1px 3px rgba(34,60,82,.13); }
+.dcell[data-sel] .w { color: var(--ink-2); }
+.mk { font-style: normal; font-size: 8px; line-height: 1; }
+.mk.dot { width: 4px; height: 4px; border-radius: 50%; display: block; }
+.mk.nous { color: var(--gold); font-size: 9px; }
+.mk.prop { color: var(--plum); font-size: 9px; }
+.mk.today { color: var(--accent); font-size: 9px; }
+.mk.more { color: var(--ink-3); font-size: 11px; }
+
+.daytitle {
+  flex: none; border: 0; background: none; font-family: var(--serif); font-style: italic;
+  font-size: 14px; color: var(--ink-2); padding: 2px 0 8px; text-align: center; width: 100%;
+}
+.daycol {
+  flex: 1; min-width: 0; position: relative; background: var(--paper);
+  border-left: 1px solid var(--line); border-right: 1px solid var(--line);
+}
+
 /* ---------- messagerie ---------- */
 .chat { flex: 1; min-height: 0; }   /* le display vient de .screen[data-active] */
 .msgs { flex: 1; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
@@ -151,12 +180,24 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
   </header>
 
   <nav class="tabs" role="tablist">
-    <button class="tab" role="tab" data-screen="week" aria-selected="true">Semaine</button>
+    <button class="tab" role="tab" data-screen="day" aria-selected="true">Jour</button>
+    <button class="tab" role="tab" data-screen="week" aria-selected="false">Semaine</button>
     <button class="tab" role="tab" data-screen="chat" aria-selected="false">Messages</button>
     <button class="tab" role="tab" data-screen="measures" aria-selected="false">Mesures</button>
   </nav>
 
-  <section class="screen" id="screen-week" data-active>
+  <section class="screen" id="screen-day" data-active>
+    <div class="daystrip" id="daystrip"></div>
+    <button class="daytitle" id="daytitle"></button>
+    <div class="scroller" id="dayscroller">
+      <div class="canvas" id="daycanvas">
+        <div class="gutter" id="daygutter"></div>
+        <div class="daycol" id="daycol"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-week">
     <div class="weekhead"><div class="gutter"></div><div class="cols" id="weekhead"></div></div>
     <div class="scroller" id="scroller">
       <div class="canvas" id="canvas">

@@ -21,6 +21,10 @@ page.on('pageerror', (e) => errors.push(String(e)))
 await page.goto(URL, { waitUntil: 'networkidle' })
 const cdp = await context.newCDPSession(page)
 
+// la vue Jour est désormais l'écran d'accueil : ce test porte sur la Semaine
+await page.locator('.tab[data-screen="week"]').click()
+await page.waitForTimeout(200)
+
 const touch = async (type, x, y) =>
   cdp.send('Input.dispatchTouchEvent', {
     type,
@@ -34,13 +38,13 @@ const check = (name, ok, extra = '') => {
 }
 
 /* 1. rendu */
-const count = await page.locator('.ev').count()
-check('14 blocs rendus', count === 14, `${count} blocs`)
+const count = await page.locator('#screen-week .ev').count()
+check('24 blocs rendus dans la Semaine', count === 24, `${count} blocs`)
 check('gouttière des heures', (await page.locator('#gutter span').count()) === 24)
 check('7 colonnes', (await page.locator('.col').count()) === 7)
 
 /* 2. un mouvement AVANT 350 ms doit défiler, pas déplacer */
-const target = page.locator('.ev').first()
+const target = page.locator('#screen-week .ev').first()
 let box = await target.boundingBox()
 const before = await page.evaluate(() => document.getElementById('scroller').scrollTop)
 await touch('touchStart', box.x + box.width / 2, box.y + 8)
@@ -69,20 +73,20 @@ for (let i = 1; i <= 8; i += 1) await touch('touchMove', box.x + box.width / 2, 
 await sleep(60)
 await touch('touchEnd', 0, 0)
 await sleep(150)
-const topAfter = await page.locator('.ev').first().evaluate((el) => parseFloat(el.style.top))
+const topAfter = await page.locator('#screen-week .ev').first().evaluate((el) => parseFloat(el.style.top))
 check('glissé accroché aux 30 min', topAfter > topBefore && (topAfter - topBefore) % 30 === 0,
   `top ${topBefore} → ${topAfter}`)
 
 /* 4. tap simple : sélection et poignées */
-await page.locator('.ev').first().scrollIntoViewIfNeeded()
+await page.locator('#screen-week .ev').first().scrollIntoViewIfNeeded()
 await sleep(120)
-box = await page.locator('.ev').first().boundingBox()
+box = await page.locator('#screen-week .ev').first().boundingBox()
 await touch('touchStart', box.x + box.width / 2, box.y + 8)
 await sleep(80)
 await touch('touchEnd', 0, 0)
 await sleep(120)
-check('tap : sélection', (await page.locator('.ev[data-sel]').count()) === 1)
-check('tap : deux poignées', (await page.locator('.handle').count()) === 2)
+check('tap : sélection', (await page.locator('#screen-week .ev[data-sel]').count()) === 1)
+check('tap : deux poignées', (await page.locator('#screen-week .handle').count()) === 2)
 
 /* 5. onglets */
 await page.locator('.tab[data-screen="measures"]').click()

@@ -514,7 +514,11 @@ export function mountWeek() {
   applyFocus()
   const sub = document.getElementById('subtitle')
   if (sub) sub.textContent = 'cette semaine'
-  // on ouvre sur 7 h du matin, comme l'app — après la première mise en page,
-  // sinon le conteneur n'est pas encore défilable (cas de la version en un seul fichier)
-  requestAnimationFrame(() => { scroller.scrollTop = 7 * 2 * slotH() })
+  requestAnimationFrame(revealWeek)
+}
+
+/** Pose le défilement sur 7 h à la première ouverture de l'onglet : un écran
+ *  masqué n'a pas de hauteur, donc `scrollTop` n'y produit aucun effet. */
+export function revealWeek() {
+  if (scroller.scrollTop === 0) scroller.scrollTop = 7 * 2 * slotH() - 10
 }
