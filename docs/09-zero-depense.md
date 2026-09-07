@@ -356,6 +356,7 @@ rattrapage à l'ouverture pour tout ce qui est notifié.
 | **Gestes** | Le menu contextuel revient à l'appui long malgré `-webkit-touch-callout: none` (bug ouvert d'iOS 26.1) : il faut aussi `user-select: none`, `touch-action`, et un écouteur `contextmenu` qui annule. Le pincement ne se désactive pas par le viewport depuis iOS 10 : seul `touch-action` et des écouteurs tactiles non passifs le peuvent. Le spike web applique déjà tout cela. |
 | **Stockage** | Les chiffres publics se contredisent (WebKit et MDN annoncent des pourcentages inversés, contradiction ouverte depuis juillet 2025) : seule la mesure sur l'appareil compte. Surtout, le terrain contredit la théorie : pertes d'IndexedDB signalées sur iOS (« Connection to Indexed Database server lost »), en hausse depuis iOS 17.4, et suppression des données mises en cache quand le téléphone manque d'espace. **Règle d'ingénierie : côté iPhone, le stockage local est un cache reconstructible, jamais la source de vérité.** Au démarrage, comparer le nombre de lignes locales à celui du serveur et resynchroniser si ça diverge. |
 | **« Effacer historique et données de sites »** | Web app et Safari partagent au minimum le service worker et le cache. Cette action peut vider l'app hors ligne **sans avertissement**. À présenter comme un bouton à ne jamais toucher. |
+| **Aucune synchronisation en arrière-plan** | Ni Background Sync, ni Periodic Sync, ni Background Fetch sur iOS, et WebKit n'annonce aucun horizon. Conséquence à assumer dans le produit : **ce qu'elle écrit hors ligne ne part que quand elle rouvre l'app**. Si elle ne l'ouvre pas pendant deux jours, ses modifications restent sur son téléphone. L'écran de synchronisation doit donc afficher « N choses en attente d'envoi », visiblement. |
 | **Badge d'icône** | `navigator.setAppBadge` fonctionne sur les web apps d'écran d'accueil, à condition que la permission de notification soit accordée. C'est le **seul substitut de widget** possible sur l'iPhone. |
 | **La voie native est close, définitivement** | Un compte Apple gratuit n'a pas la capability Push Notifications. Même un sideload parfaitement automatisé (SideStore, LiveContainer, rafraîchissement sur l'appareil sans ordinateur) ne donnerait **ni notification distante ni widget** — c'est-à-dire exactement les deux besoins. Et le DMA n'ouvre rien : publier dans une boutique alternative exige la notarisation, donc l'adhésion payante. |
 
@@ -371,22 +372,37 @@ C'est la meilleure raison de soigner le spike web : il assure les deux télépho
 
 ### 12.4 Réglages à faire sur chaque téléphone
 
-**Sur le S24 Ultra, avant tout le reste :**
+#### Galaxy S24 Ultra
 
-1. Réglages → Sécurité et confidentialité → **Auto Blocker** : relever s'il est actif, et le laisser éteint. Vérifier au même endroit qu'**Advanced Protection** n'est pas activé : il grise définitivement l'autorisation d'installer.
-2. Réglages → Applications → Accès spécial → **Installer des applications inconnues** → autoriser **Obtainium** seulement.
-3. Réglages → Batterie → Limites d'utilisation en arrière-plan → **Applications jamais en veille** → ajouter Nous.
-4. Réglages → Applications → Nous → Batterie → **Sans restriction**.
-5. Réglages → Batterie → Autres paramètres → désactiver la **batterie adaptative**.
-6. Refaire les points 3 à 5 **après chaque mise à jour One UI**.
+| Quoi | Où |
+| ---- | -- |
+| Relever l'état d'**Auto Blocker** et le laisser éteint ; noter s'il propose « activer automatiquement » | Paramètres → Sécurité et confidentialité → Auto Blocker |
+| Vérifier que **Protection avancée** est désactivée, et ne jamais l'activer, même si Android la recommande | Paramètres → Sécurité et confidentialité → Protection avancée |
+| Noter si **Vérification d'identité** est activée : si oui, il faudra l'empreinte pour toucher à Auto Blocker hors de la maison | Paramètres → Sécurité et confidentialité → Protection contre le vol |
+| Autoriser **Obtainium seulement** à installer des applications, pas Chrome | Paramètres → Applications → ⋮ → Accès spécial → Installer des applications inconnues |
+| Mettre Nous dans **Applications jamais en veille**, et vérifier qu'elle n'est ni « en veille » ni « en veille profonde » | Paramètres → Batterie → Limites d'utilisation en arrière-plan |
+| Passer sa batterie sur **Sans restriction** (réglage différent du précédent, il faut les deux) | Paramètres → Applications → Nous → Batterie |
+| Désactiver la **batterie adaptative**, qui défait silencieusement les réglages avec le temps | Paramètres → Batterie → Autres paramètres de batterie |
+| Désactiver l'**optimisation automatique** et le **redémarrage programmé**, souvent réglé en pleine nuit, juste avant les rappels du matin | Paramètres → Maintenance de l'appareil → ⋮ → Automatisation |
+| Mettre **Fluidité des mouvements sur Adaptatif** et ne plus y toucher : en Standard l'écran retombe à 60 Hz et toutes les mesures deviennent fausses | Paramètres → Affichage → Fluidité des mouvements |
+| Noter la **résolution** choisie et la garder telle quelle | Paramètres → Affichage → Résolution d'écran |
+| Ne **pas** s'inscrire à la bêta One UI 9, et couper le téléchargement automatique des mises à jour | Paramètres → Mise à jour du logiciel |
+| **Après chaque mise à jour One UI** : refaire les quatre réglages de batterie et vérifier qu'Auto Blocker ne s'est pas rallumé | — |
 
-**Sur l'iPhone 16 :**
+#### iPhone 16
 
-1. Ajouter le site à l'écran d'accueil en laissant **« Ouvrir comme web app »** activé.
-2. Accorder la permission de notification **depuis un bouton**, jamais au chargement.
-3. Réglages → Notifications → Nous : désactiver le **Résumé programmé**, vérifier qu'aucun mode de Concentration ne la filtre.
-4. **Ne jamais** utiliser Réglages → Safari → Effacer historique et données de sites.
-5. **Attendre le feu vert** avant d'installer une mise à jour majeure d'iOS.
+| Quoi | Où |
+| ---- | -- |
+| Noter la **version exacte d'iOS** et la transmettre : le comportement change à chaque mise à jour, même mineure | Réglages → Général → Informations |
+| Noter la **capacité** et l'espace libre : le quota de stockage web en dépend | Réglages → Général → Stockage iPhone |
+| Couper les **mises à jour automatiques d'iOS** jusqu'à nouvel ordre | Réglages → Général → Mise à jour logicielle → Mises à jour automatiques |
+| Ajouter Nous à l'écran d'accueil **depuis Safari**, en vérifiant que « Ouvrir comme web app » est resté activé : sinon c'est un simple raccourci, sans plein écran, sans notification, sans pastille | Safari → Partager → Sur l'écran d'accueil |
+| Ouvrir Nous **depuis son icône**, jamais depuis Safari, puis accepter les notifications quand l'app le demande | Écran d'accueil |
+| Autoriser bannières, sons et pastilles, et **retirer Nous du Résumé programmé** | Réglages → Notifications → Nous, puis Résumé programmé |
+| Ajouter Nous aux **applications autorisées de chaque mode de Concentration** (Sommeil, Travail, Ne pas déranger) | Réglages → Concentration → chaque mode |
+| **Ne jamais** utiliser « Effacer historique et données de sites » | Réglages → Apps → Safari |
+| **Ne jamais** supprimer l'icône pour la remettre « pour réparer » : cela détruit l'abonnement aux notifications | Écran d'accueil |
+| **Après chaque mise à jour d'iOS** : rouvrir l'app, vérifier le plein écran, envoyer une notification de test, signaler tout menu « Copier / Rechercher » à l'appui long | — |
 
 ### 12.5 Ce que le spike doit rapporter
 

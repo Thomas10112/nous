@@ -180,11 +180,19 @@ plus risqué de la stack tient, et lever les prérequis. **Point de validation.*
     plus aux inconnues de [09 §10](09-zero-depense.md) : fréquence d'écran, quota de
     stockage, notification sans serveur, badge, hors ligne.
 
-  **Critères** : 0 frame au-delà du **budget de l'écran mesuré par le spike** (≈ 8,3 ms à
-  120 Hz sur le S24 Ultra, 16,7 ms à 60 Hz sur l'iPhone 16 — le compteur affiche le budget
-  qu'il a mesuré), 0 geste perdu sur 50 essais, aucun menu contextuel iOS à l'appui long,
-  la page qui ne zoome pas au pincement, clavier sans saut, et le verdict du couple sur
-  **chacun des deux clients** : « ça sent l'app » ou « ça sent le site ».
+  **Critères.** Le budget n'est plus une constante mais `1000 / cadence mesurée` : un test
+  qui ignore sa cadence ne mesure rien, et « 0 frame > 16 ms » serait à la fois trop laxiste
+  sur le S24 Ultra (à 120 Hz, une image doublée sur deux passerait) et juste par accident sur
+  l'iPhone 16. Sur 5 secondes de glissé continu : **p99 sous le budget mesuré** (≈ 8,3 ms à
+  120 Hz, 16,7 ms à 60 Hz) et **aucune image au-delà de 25 ms**, trois images perdues étant
+  le seuil où la saccade se voit. Même exigence pour le pincement et le changement de
+  semaine. À quoi s'ajoutent : la cadence réellement observée pendant le geste (le LTPO peut
+  rester à 60 Hz, c'est un résultat en soi), 0 geste perdu sur 50 essais, le scénario de
+  l'issue Reanimated #7435 rejoué explicitement, aucun menu contextuel iOS à l'appui long, la
+  page qui ne zoome pas au pincement, un clavier sans saut, et le verdict du couple sur
+  **chacun des deux clients**. Préalable non négociable côté S24 Ultra : fluidité en mode
+  Adaptatif, résolution notée, Nous en « jamais en veille » et batterie sans restriction —
+  sinon on mesure un autre téléphone.
 
 **Fini quand** : stack validée par écrit après le spike ; appareils identifiés (dont la
 réponse iPhone / pas d'iPhone) ; projet Supabase joignable ; les deux `auth.uid()` connus ;
