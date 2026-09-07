@@ -27,7 +27,7 @@ le tableau fait foi). **Ordre linéaire recommandé** pour un développeur seul 
 | 4     | Stockage local & hors ligne            | 3           | Base par compte, outbox, curseurs transactionnels, FTS ; CRUD complet en mode avion       |
 | 5     | Synchronisation temps réel             | 4           | Registre de modes, push/pull/LWW/canal privé ; convergence 3/3 au protocole deux téléphones |
 | 6     | Design system mobile                   | 2           | `packages/theme`, `ui/*`, galerie + **quatre maquettes vivantes validées par le couple**  |
-| 7     | Moteur calendrier, vue Jour & Accueil  | 3, 6        | Vues Accueil / Jour / Semaine / Mois / Année, gestes arbitrés, données de démonstration  |
+| 7     | Moteur calendrier, vue Jour & Accueil  | 3, 6        | Vues Accueil / Jour / Mois / Année, gestes arbitrés, données de démonstration  |
 | 8     | Événements personnels                  | 4, 5, 7     | Créer / éditer / déplacer / supprimer / restaurer, hors ligne et sur l'autre téléphone   |
 | 9     | Activités à deux & propositions        | 8           | Bulle : accepter / refuser / contre-proposer / retirer ; gardes serveur                   |
 | 10    | Moments importants, chapitres, comptes à rebours, rappels locaux | 8 | Constellation, occurrences, chapitres, « Encore 24 dodos », planificateur local |
@@ -585,7 +585,7 @@ toujours là ; purge à 30 j simulés → objet Storage absent ; photo v1 visibl
 Phase 10) et leur annulation quand l'autre a coché ;
 `features/habits/{ui/HabitSheet,ui/RecurrenceField,ui/AdvancedRecurrence,ui/HabitPill,ui/DidYouSheet (Oui / Non / Rattraper),ui/CatchUpSheet,screen/HabitsScreen}.tsx` ;
 chips « Habitudes » du calendrier, `app/sheets/habit/*` ; **intégration calendrier** :
-`HabitPill` dans Jour / Semaine / Mois.
+`HabitPill` dans Jour et Mois.
 
 **Tests.** `describe` (« Tous les 3 mercredis ») ; `done` absorbant (Mimi « oui » 10:00,
 Mimine « non » hors ligne 10:01 → `done`) ; deux téléphones cochent la même occurrence
@@ -724,7 +724,7 @@ six écrans de [05 §8](05-design-system-mobile.md) ; revue de sécurité (RLS, 
 fonctions, secrets, inscriptions fermées).
 
 **Fini quand** : couverture `domain` ≥ 90 %, `data` ≥ 80 % ; 0 divergence après chaos ;
-ouverture à froid < 1,5 s et 0 frame > 32 ms en scroll Semaine sur l'Android de
+ouverture à froid < 1,5 s et 0 frame > 32 ms en défilement de la vue Jour sur l'Android de
 référence ; recherche < 100 ms ; audit a11y sans bloquant.
 
 **Effort.** 5–6 jours.
@@ -815,7 +815,7 @@ drag).
 | 2 | `vite-plugin-pwa`, manifest, icônes, polices auto-hébergées, service worker avec stratégie de mise à jour et bouton « réinitialiser » ; `packages/data` : adaptateur **IndexedDB (Dexie)** derrière la même interface que `expo-sqlite` ; `ping()` au chargement | 4–6 j |
 | 4–5 | Outbox et sync sur l'adaptateur web ; protocole deux téléphones = Android natif + PWA iPhone | 2–3 j |
 | 6 | Tokens → CSS (déjà prévu), primitives web (feuille, cartes, marques) en React DOM | 3–4 j |
-| 8 | Calendrier web : Jour / Semaine / Mois / Année, drag et poignées en pointer events (pas Reanimated) | 6–8 j |
+| 8 | Calendrier web : vue Jour, bandeau de coupes, Mois, Année ; drag et poignées en pointer events (pas Reanimated). La maquette web en contient déjà l'essentiel. | 5–7 j |
 | 9–10 | Propositions, bulle, moments, constellation en CSS/SVG | 4–5 j |
 | 11–12 | Souvenirs (upload standard, vignettes canvas), habitudes | 3–4 j |
 | 13–14 | Statistiques, messages, présence | 2–3 j |
