@@ -356,7 +356,7 @@ rattrapage à l'ouverture pour tout ce qui est notifié.
 | **Badge d'icône** | `navigator.setAppBadge` fonctionne sur les web apps d'écran d'accueil, à condition que la permission de notification soit accordée. C'est le **seul substitut de widget** possible sur l'iPhone. |
 | **La voie native est close, définitivement** | Un compte Apple gratuit n'a pas la capability Push Notifications. Même un sideload parfaitement automatisé (SideStore, LiveContainer, rafraîchissement sur l'appareil sans ordinateur) ne donnerait **ni notification distante ni widget** — c'est-à-dire exactement les deux besoins. Et le DMA n'ouvre rien : publier dans une boutique alternative exige la notarisation, donc l'adhésion payante. |
 
-### 12.2 bis Le repli qui rassure
+### 12.3 Le repli qui rassure
 
 Si un jour l'installation d'un APK devient impossible sur le S24 Ultra — Advanced Protection
 imposé, vérification développeur étendue à l'installation directe, Auto Blocker verrouillé —
@@ -366,7 +366,7 @@ trois choses : le widget d'écran d'accueil, les rappels exacts hors ligne, et l
 120 Hz. Comme le client web est de toute façon écrit pour l'iPhone, ce repli est déjà payé.
 C'est la meilleure raison de soigner le spike web : il assure les deux téléphones.
 
-### 12.3 Réglages à faire sur chaque téléphone
+### 12.4 Réglages à faire sur chaque téléphone
 
 **Sur le S24 Ultra, avant tout le reste :**
 
@@ -385,7 +385,7 @@ C'est la meilleure raison de soigner le spike web : il assure les deux télépho
 4. **Ne jamais** utiliser Réglages → Safari → Effacer historique et données de sites.
 5. **Attendre le feu vert** avant d'installer une mise à jour majeure d'iOS.
 
-### 12.4 Ce que le spike doit rapporter
+### 12.5 Ce que le spike doit rapporter
 
 Le spike web ([`spike/week-grid-web`](../spike/week-grid-web/README.md)) a un onglet
 **Mesures** qui répond, chiffres à l'appui, à ce que la documentation publique ne tranche

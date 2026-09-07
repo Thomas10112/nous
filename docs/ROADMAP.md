@@ -499,9 +499,10 @@ ici aux rappels J-7 / J-1, puis aux habitudes en Phase 12).
 **Fichiers.** `packages/domain/src/countdowns/{target,label,reminders,widgetEntries}.ts`,
 **`domain/notifications/scheduler.ts`** (horizon 14 j, plafond 60, appareil élu),
 **`packages/data/src/push/LocalScheduler.ts`** (`expo-notifications`, local seulement,
-**`USE_EXACT_ALARM` déclarée dans `app.json`** et non `SCHEDULE_EXACT_ALARM` : sur la série
-S24, un refus de cette dernière fait disparaître définitivement l'entrée « Alarmes et
-rappels » et casse les rappels sans retour — [09 §12.1](09-zero-depense.md)) ;
+**`USE_EXACT_ALARM` déclarée dans `app.json`** et non `SCHEDULE_EXACT_ALARM` : cette
+dernière est refusée après une restauration Smart Switch même si elle avait été accordée,
+donc les rappels casseraient en silence au prochain changement de téléphone —
+[09 §12.1](09-zero-depense.md)) ;
 `features/moments/{ui/Constellation,ui/MomentStar,ui/OccurrenceScreen,ui/ChapterList,ui/ChapterEditor,ui/MoodPicker,ui/MomentSheet,ui/AttachEvent}.tsx` ;
 `features/countdowns/{ui/CountdownCard,ui/ReminderSettings,hooks/useNextDates}.ts` ;
 `app/(tabs)/memories/{index,moments/[momentId]/[year]}.tsx`, `app/sheets/{moment,countdown}/*` ;
@@ -674,7 +675,7 @@ grain), Présence, Notifications, Statistiques masquées, Corbeille, Synchronisa
 l'état réel de ce qui rend l'app muette et que personne ne pense à vérifier : autorisation
 de notification, alarmes exactes, exemption de veille Samsung, jeton push enregistré, mode
 web app et abonnement Web Push côté iPhone, avec un lien direct vers chaque page de
-réglages ([09 §12.3](09-zero-depense.md)) ; audit reduced-motion écran par
+réglages ([09 §12.4](09-zero-depense.md)) ; audit reduced-motion écran par
 écran ; haptiques ; états vides et erreurs ; transitions partagées (vignette →
 lightbox) ; revue de la copy avec le couple ; palette « bleu » et sombre partout ;
 « la demande » portée en natif (bonus).
