@@ -260,6 +260,7 @@ notifications locales recalculé.
 - Supabase local (CLI + Docker) : pgTAP (`supabase test db`), tests Realtime.
 - Maestro : parcours sur builds de développement ; protocole deux téléphones (04 §12).
 - GitHub Actions : typecheck, lint, tests, `supabase test db`, build web, `expo doctor`,
-  `keep-alive` (6 h).
-- EAS : profils `development`, `preview` (distribution interne, URL Supabase via proxy
-  pour le chaos), `production`.
+  build APK release (`release-android.yml` → GitHub Release), `backup.yml` hebdomadaire
+  (touche la base : anti-pause légitime, ADR-009).
+- Builds Android locaux (`npx expo run:android`, Linux/WSL2) ; EAS en secours seulement,
+  profils `development` / `preview` (URL Supabase via proxy pour le chaos) / `production`.

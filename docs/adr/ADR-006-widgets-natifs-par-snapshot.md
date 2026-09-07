@@ -24,8 +24,11 @@ données avec l'application.
 **iOS : A comme voie principale** (`expo-widgets`, stable depuis SDK 56, images via
 `widgetsDirectory`, en TSX sans Swift) ; **B en repli** seulement si le rendu Fraunces /
 crème / grain n'est pas atteignable en Expo UI — et à condition qu'un Mac soit disponible
-(itérer sur du Swift WidgetKit sans Xcode = un build EAS par essai, sur un quota de 15
-par mois). **Android : C**. Dans tous les cas, derrière une interface commune
+(itérer sur du Swift WidgetKit sans Xcode = un build par essai). **Android : C**.
+**Amendement du 06/09/2026 (ADR-009)** : sans compte Apple Developer, les widgets iOS
+sortent du périmètre (la PWA n'en a pas ; `expo-widgets` seulement si un spike natif
+sideloadé tient sur l'iOS réel du couple). Cet ADR s'applique donc à **Android** ; la partie
+iOS reste documentée pour le jour où un compte Apple existerait. Dans tous les cas, derrière une interface commune
 `WidgetBridge` :
 
 - l'application écrit un **snapshot** (`widget-snapshot.json` + image redimensionnée
@@ -48,7 +51,8 @@ ni au domaine.
 
 - ~150 lignes de Swift (WidgetKit) et la configuration `react-native-android-widget` :
   c'est du natif assumé, isolé dans `apps/mobile/targets/` et `apps/mobile/native/`.
-- Nécessite des **builds de développement** (pas Expo Go) et un compte Apple Developer
-  pour l'App Group.
+- Nécessite des **builds de développement** (pas Expo Go). Côté iOS, l'App Group est
+  disponible avec un Apple ID gratuit mais les widgets tiers re-signés par les sideloaders
+  cassent en 2026 ([09 §2.2](../09-zero-depense.md)) : iOS conditionné à un spike.
 - Le domaine fournit `widgetEntries(countdowns, moments, now)` : la logique de « quelle
   date montrer » est testée en Node, pas dans le widget.

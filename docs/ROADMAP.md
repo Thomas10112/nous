@@ -21,8 +21,8 @@ le tableau fait foi). **Ordre linéaire recommandé** pour un développeur seul 
 | Phase | Titre                                  | Dépend de   | Livrable vérifiable                                                                     |
 | ----- | -------------------------------------- | ----------- | --------------------------------------------------------------------------------------- |
 | 0     | Audit                                  | —           | `docs/00-audit.md` ✅                                                                    |
-| 1     | Stack mobile et spike                  | 0           | `docs/01-stack.md`, ADR-001, **spike de la vue Semaine sur les deux téléphones**, compte Apple, mesures — **validation attendue** |
-| 2     | Architecture & monorepo                | 1           | Monorepo pnpm, app Expo connectée à Supabase sur les deux téléphones, web non régressé, CI, keep-alive |
+| 1     | Stack mobile et spike                  | 0           | `docs/01-stack.md`, ADR-001, **spike de la vue Semaine sur les deux téléphones** (Expo Go), mesures, ADR-009 zéro dépense — **validation attendue** |
+| 2     | Architecture & monorepo                | 1           | Monorepo pnpm, app Expo connectée à Supabase sur les deux téléphones, web non régressé, CI, `ping()` anti-pause, `backup.yml` |
 | 3     | Modèle de données & repositories       | 2           | Migrations sur instance locale puis projet réel, identité du couple installée, moteur de récurrence, repositories testés en Node |
 | 4     | Stockage local & hors ligne            | 3           | Base par compte, outbox, curseurs transactionnels, FTS ; CRUD complet en mode avion       |
 | 5     | Synchronisation temps réel             | 4           | Registre de modes, push/pull/LWW/canal privé ; convergence 3/3 au protocole deux téléphones |
@@ -31,12 +31,12 @@ le tableau fait foi). **Ordre linéaire recommandé** pour un développeur seul 
 | 8     | Événements personnels                  | 4, 5, 7     | Créer / éditer / déplacer / supprimer / restaurer, hors ligne et sur l'autre téléphone   |
 | 9     | Activités à deux & propositions        | 8           | Bulle : accepter / refuser / contre-proposer / retirer ; gardes serveur                   |
 | 10    | Moments importants, chapitres, comptes à rebours, rappels locaux | 8 | Constellation, occurrences, chapitres, « Encore 24 dodos », planificateur local |
-| 11    | Souvenirs & médias                     | 8           | Photos / vidéos hors ligne (TUS), galerie unifiée v1 + nouveaux, purge Storage           |
+| 11    | Souvenirs & médias                     | 8           | Photos et vidéos courtes hors ligne (upload standard, reprise applicative, vignettes), galerie unifiée v1 + nouveaux, purge Storage |
 | 12    | Habitudes                              | 8           | « Tous les [3] [semaines] », fait / pas fait / rattraper, relance                        |
 | 13    | Recherche & statistiques               | 10, 11      | Périodes naturelles, personnes, contenu associé ; « Nos statistiques » masquable         |
 | 14    | Messagerie & présence                  | 5, 6, 8     | Conversation, réactions hors ligne, présence partout, bulles d'activité, message rapide  |
 | 15    | Notifications push                     | 9, 12, 14   | Triggers → Edge Function → Expo Push ; préférences ; liens profonds                       |
-| 16    | Widgets iOS / Android                  | 10, 11      | Widget photo + compte à rebours, 3 tailles, juste à minuit sans ouvrir l'app             |
+| 16    | Widgets Android (iOS hors périmètre)   | 10, 11      | Widget photo + compte à rebours, 3 tailles, juste à minuit sans ouvrir l'app             |
 | 17    | Polish UX, réglages, onboarding        | 9, 12, 13, 14, 15, 16 | Réglages complets (affichage, présence, notifications…), reduced-motion, a11y |
 | 18    | Tests complets                         | 17          | E2E, chaos par proxy, charge, VoiceOver / TalkBack, couverture                           |
 | 19    | Optimisation & production              | 18          | Builds EAS, distribution privée, durcissement Supabase, sauvegardes, runbook              |
@@ -88,14 +88,17 @@ flowchart LR
 4. **La logique métier vit dans `packages/domain`**, testée en Node.
 5. **Migrations serveur additives** jusqu'à la Phase 19 ; le contrat `items(collection,
    data)` lu par le web n'est jamais altéré.
-6. **Deux téléphones réels** (un iPhone, un Android — modèles fixés en Phase 1, T10) :
-   la Phase 4 est vérifiée en mode avion ; chaque phase ≥ 5 est vérifiée sur les deux
-   téléphones, en mode avion puis en ligne, au **protocole deux téléphones** de la Phase 5 —
-   **Android automatisé (Maestro), iPhone par check-list manuelle** (`maestro/MANUAL-IOS.md`)
-   tant qu'il n'y a pas de Mac : Maestro ne pilote pas d'iPhone physique.
-7. **Budget de builds** : le plan EAS gratuit donne 15 builds iOS et 15 Android par mois.
-   Un build de développement n'est refait que lorsqu'une dépendance native change ; le
-   JavaScript passe par le serveur de développement ou EAS Update.
+6. **Deux téléphones réels** (modèles fixés en Phase 1, T10/T13). **Android est la plateforme
+   principale** ; si l'un des deux a un iPhone, son client est la **PWA** à périmètre réduit
+   (ADR-009, [09](09-zero-depense.md), §7). La Phase 4 est vérifiée en mode avion ; chaque
+   phase ≥ 5 est vérifiée sur les deux téléphones, en mode avion puis en ligne, au
+   **protocole deux téléphones** de la Phase 5 — **Android automatisé (Maestro), PWA iPhone
+   par check-list manuelle** (`maestro/MANUAL-IOS.md`) : Maestro ne pilote pas d'iPhone physique.
+7. **Zéro dépense** (ADR-009) : aucun compte Apple, Play Console, plan Supabase ou EAS
+   payant. Les builds Android sont **locaux (Linux/WSL2) ou en CI GitHub Actions**, avec un
+   seul keystore sauvegardé ; EAS Build n'est qu'un secours, EAS Update un confort. Un build
+   de développement n'est refait que lorsqu'une dépendance native change ; le JavaScript
+   passe par le serveur de développement ou EAS Update. Aucun secret dans le dépôt (public).
 8. **L'usage réel par le couple** (« une semaine sans perte ») est un *soak* en parallèle,
    jamais le critère bloquant : le critère est le scénario automatisé (ou la check-list
    iOS jouée et signée).
@@ -128,7 +131,7 @@ nous/
 ├─ supabase/
 │  ├─ migrations/  functions/{push,purge-trash}/  tests/ (pgTAP)  scripts/migrate-v1.ts  seed/
 ├─ docs/
-├─ .github/workflows/ci.yml  keep-alive.yml  backup.yml
+├─ .github/workflows/ci.yml  backup.yml  release-android.yml
 ├─ pnpm-workspace.yaml  package.json  tsconfig.base.json  .eslintrc.cjs  .prettierrc
 ```
 
@@ -152,10 +155,10 @@ plus risqué de la stack tient, et lever les prérequis. **Point de validation.*
 
 - [01-stack.md](01-stack.md) (comparatif, contre-expertise, verdict), [ADR-001](adr/ADR-001-stack-react-native-expo.md).
   Réponses aux questions T1–T11 de [07](07-questions-ouvertes.md).
-- **Prérequis** : compte Apple Developer actif (indispensable pour un build de
-  développement sur iPhone, donc dès la Phase 2), iPhone et Android de test enregistrés
-  (modèles, OS, 60/120 Hz notés), profil EAS `development` fonctionnel, projet Supabase
-  réactivé.
+- **Prérequis** (révisés le 06/09, zéro dépense) : **aucun compte payant**. Téléphones de
+  test identifiés (modèles, OS, 60/120 Hz, lequel est un iPhone — T10, T13), compte Expo
+  gratuit et Expo Go installé sur les deux téléphones, projet Supabase réactivé, réponses
+  aux questions de [09 §11](09-zero-depense.md).
 - **Mesures sur les données réelles** : `items` par collection (nombre, taille),
   objets Storage et orphelins (`storage.objects` vs références `cloud:` dans les dix
   champs de `items.data`), `local:` restants, échelle réelle de `Adventure.rating`,
@@ -167,13 +170,15 @@ plus risqué de la stack tient, et lever les prérequis. **Point de validation.*
   soulèvement haptique → drag sur worklet → accrochage 30 min → poignées → pinch de
   hauteur de créneau, scroll qui ne se bat pas avec le drag, colonne focus en portrait
   ([06 §3.7, §4](06-moteur-calendrier.md)) ; plus un écran de messagerie factice pour le
-  clavier. Build de développement sur les deux téléphones. **Critères** : 0 frame
+  clavier. Lancé via **Expo Go** sur les deux téléphones (gratuit, sans compte Apple ;
+  mesure de référence Android sur un build release local). **Critères** : 0 frame
   > 16 ms pendant le drag sur l'Android du couple (`useFrameCallback`), 0 geste perdu sur
   50 essais, clavier sans saut, et le verdict du couple : « ça sent l'app » ou « ça sent
   le site ». Le code est jeté ; on garde la décision et les réglages de gestes.
 
-**Fini quand** : stack validée par écrit après le spike ; compte Apple, appareils et profil
-EAS opérationnels ; projet Supabase joignable ; les deux `auth.uid()` connus ; volumes mesurés.
+**Fini quand** : stack validée par écrit après le spike ; appareils identifiés (dont la
+réponse iPhone / pas d'iPhone) ; projet Supabase joignable ; les deux `auth.uid()` connus ;
+volumes mesurés ; ADR-009 accepté par le couple.
 
 **Effort.** 10–12 jours (dont le spike).
 
@@ -181,9 +186,11 @@ EAS opérationnels ; projet Supabase joignable ; les deux `auth.uid()` connus ; 
 Supabase restauré et données réelles mesurées ([08](08-mesures-phase1.md) : 10 lignes,
 4,4 Ko, 2 photos, les deux `auth.uid()` relevés) ; spike écrit et typé dans
 [`spike/week-grid/`](../spike/week-grid/README.md) (palette bleue et couleurs réelles du
-couple). **Reste** : compte Apple Developer, appareils (T10), Mac (T11), build EAS du spike
-sur les deux téléphones et leur verdict — la porte de décision n'est pas franchie tant que
-ce verdict n'est pas écrit dans l'ADR-001.
+couple). **Reste** : appareils (T10, T13), réponses de [09 §11](09-zero-depense.md), lancement du
+spike via Expo Go sur les deux téléphones et leur verdict — la porte de décision n'est pas
+franchie tant que ce verdict n'est pas écrit dans l'ADR-001. Le 06/09 au soir, la contrainte
+« zéro dépense » a été instruite ([09](09-zero-depense.md), ADR-009) : plus aucun prérequis
+payant.
 
 ---
 
@@ -199,7 +206,8 @@ pas, et que l'app se connecte à Supabase sur les deux téléphones.
   étend la base mais désactive ces deux options** (site gelé — sinon `Settings.tsx:357`
   ne compile plus), `.eslintrc.cjs` (typescript-eslint, react-hooks,
   `import/no-restricted-paths`, règle motion), `.prettierrc`,
-  `.github/workflows/{ci,keep-alive}.yml`.
+  `.github/workflows/{ci,backup,release-android}.yml` (CI ; sauvegarde hebdomadaire chiffrée
+  qui touche la base ; APK release arm64-v8a signé, publié en GitHub Release).
 - `apps/web/**` ← `git mv` ; `supabase/legacy/{schema,auth}.sql`.
 - `apps/mobile/` ← `create-expo-app` avec **`expo@^57.0.17`** (RN ≥ 0.86.3 : les versions
   antérieures, SDK 56 compris, portent une régression mémoire Hermes V1 sur les worklets
@@ -220,6 +228,13 @@ pas, et que l'app se connecte à Supabase sur les deux téléphones.
   postcss de l'ancien et du nouveau `tokens.css`, égalité des propriétés par palette ×
   schéma ; `--sidebar-w`/`--header-h` dans `apps/web/src/styles/layout-tokens.css`).
 - `packages/icons/src/{paths.ts,index.ts}` ← `Icon.tsx:15-70`.
+- **Zéro dépense** (ADR-009) : keystore Android unique généré par `keytool`, sauvegardé
+  (gestionnaire de mots de passe + secret Actions), injecté par config plugin (le
+  `build.gradle` d'Expo signe la release avec le keystore debug sinon) ; projet Firebase
+  Spark (`google-services.json` hors git) ; les deux adresses invitées dans l'organisation
+  Supabase ; `supabase/migrations/0000_ping.sql` (table `keepalive` + RPC `ping()` appelée à
+  chaque ouverture de l'app) ; build de développement local `npx expo run:android`
+  (Expo Go ne charge pas `expo-notifications` sur Android SDK 57).
 - `apps/web` importe `@nous/domain`, `@nous/theme`, `@nous/icons` ; contrôle visuel des
   **14 écrans** : `/`, `/aventures`, `/mots`, `/logements`, `/carte`, `/bucket-list`,
   `/galerie`, `/awards`, `/capsules`, `/moodboard`, `/reglages`, Login, Onboarding, Proposal.
@@ -233,11 +248,18 @@ pas, et que l'app se connecte à Supabase sur les deux téléphones.
 survit à un redémarrage à froid** sur iOS et Android ; connexion réussie sur les deux
 téléphones avec thème et polices.
 
-`keep-alive.yml` : `GET /rest/v1/items?select=id&limit=1` avec la clé publique toutes
-les 6 h — une requête qui **touche une table** (un ping de santé ne compte pas comme
-activité) — et une alerte si le workflow échoue.
+**Anti-pause Supabase** ([09 §4](09-zero-depense.md)) : pas de workflow keep-alive dédié
+(contraire aux conditions d'utilisation de GitHub Actions). L'app appelle `ping()` (une
+écriture, pas un ping de santé) à chaque ouverture et dans sa tâche de fond ; `backup.yml`
+(hebdomadaire, `workflow_dispatch` en plus du `schedule`, minute décalée) touche la base en
+la sauvegardant ; un cron externe gratuit en filet. Alerte si `backup.yml` échoue ;
+vérification mensuelle de l'onglet Actions (dépôt public : workflows planifiés désactivés
+après 60 jours sans commit).
 
-**Fini quand** : CI verte, web identique, app connectée, `keep-alive` actif.
+**Fini quand** : CI verte, web identique, app connectée sur les deux téléphones (Android
+natif ; Expo Go ou PWA pour l'iPhone en attendant la Phase 6), `ping()` visible dans la
+table `keepalive`, premier APK release installé via GitHub Release, première sauvegarde
+produite.
 
 **Effort.** 5–7 jours.
 
@@ -482,7 +504,14 @@ l'accueil juste à minuit ; notification locale J-1 reçue en mode avion.
 
 ### Phase 11 — Souvenirs et médias
 
-**Fichiers.** `packages/data/src/media/{MediaPipeline,compress (react-native-compressor ≥ 2.0.3, maxUploadBytes = 50 Mo en gratuit),thumbnails (expo-video generateThumbnailsAsync),MediaUploader (TUS),signedUrls}.ts`,
+**Politique médias (ADR-009, zéro dépense).** L'app stocke des vignettes (≤ 200 Ko) et des
+photos compressées (≤ 1 Mo) ; les originaux et les vidéos restent dans la galerie du
+téléphone ; vidéos dans l'app ≤ 10 s / 5 Mo, purgées après 12 mois ; upload standard avec
+reprise applicative (TUS instable en React Native) ; cache local pour ne jamais
+re-télécharger (egress 5 + 5 Go) ; pas de transformation d'image côté serveur (indisponible
+en gratuit).
+
+**Fichiers.** `packages/data/src/media/{MediaPipeline,compress (react-native-compressor ≥ 2.0.3, maxUploadBytes = 5 Mo, politique zéro dépense),thumbnails (expo-video generateThumbnailsAsync),MediaUploader (TUS),signedUrls}.ts`,
 `packages/domain/src/services/memories.ts` (depuis « + », une date, un événement, une
 occurrence / un chapitre = souvenir lié) ;
 `features/memories/{ui/MemorySheet,ui/MediaPicker,ui/MediaGrid,ui/MemoryCard,ui/MemoryStamp,ui/UploadQueue,screen/GalleryScreen}.tsx` ;
@@ -493,9 +522,9 @@ de `migrate-v1.ts` (dix champs énumérés) appliquée en vrai ; **intégration 
 `MemoryStamp` dans Jour / Mois, `repos.memories` dans `useCalendarItems`.
 
 **Tests.** Pipeline sur fichiers de référence (HEIC, EXIF portrait et `taken_at`, vidéo
-4K 30 s → 1080p) ; **kill à 40 % d'une vidéo de 120 Mo → reprise sans réenvoi** ; ligne
-`media` absente de l'outbox tant que `pending` ; deux téléphones : 10 photos + 1 vidéo
-hors ligne → miniatures puis originaux sur l'autre ; corbeille → restauration → média
+4K 10 s → ≤ 5 Mo) ; **kill à 40 % d'un envoi de 5 Mo → reprise sans réenvoi** ; ligne
+`media` absente de l'outbox tant que `pending` ; deux téléphones : 10 photos + 1 vidéo courte
+hors ligne → miniatures puis photos compressées sur l'autre ; corbeille → restauration → média
 toujours là ; purge à 30 j simulés → objet Storage absent ; photo v1 visible.
 
 **Fini quand** : galerie = v1 + nouveaux, hors ligne ; scénario vert.
@@ -565,45 +594,43 @@ sur `ReactionBar`.
 
 ### Phase 15 — Notifications push
 
-**Prérequis** (T12) : projet Firebase gratuit (`google-services.json` hors git, injecté par
-secret EAS ; clé de compte de service FCM V1 téléversée dans `eas credentials`), clé APNs
-(créée par EAS avec le compte Apple), secret `EXPO_ACCESS_TOKEN` pour la fonction Edge.
-Expo Push Service masque l'envoi, pas les identifiants.
+**Prérequis** (T12, ADR-009) : projet Firebase gratuit créé en Phase 2 (`google-services.json`
+hors git, injecté par secret Actions ; clé de compte de service en secret Supabase). **Pas
+de clé APNs** : l'iPhone éventuel est notifié par **Web Push** vers la PWA (VAPID généré
+localement, Declarative Web Push si iOS ≥ 18.4, jamais de push silencieux).
 
 **Fichiers.** `supabase/migrations/0011_notification_triggers.sql` (insertion sur message,
 proposition, réponse, habitude faite, photos ajoutées à une occurrence ; respect des
-préférences et des heures calmes), `supabase/functions/push/index.ts` (webhook → Expo Push
-Service), `packages/data/src/push/{PushRegistrar (register_push_token),handlers}.ts`,
+préférences et des heures calmes), `supabase/functions/push/index.ts` (webhook → FCM HTTP v1 en priorité haute et
+texte générique ; Web Push VAPID pour les abonnements de la PWA), `packages/data/src/push/{PushRegistrar (register_push_token),handlers}.ts`,
 `features/settings/ui/NotificationPreferences.tsx`, `app/settings/notifications.tsx`,
 routage des liens profonds dans `app/_layout.tsx`, suppression de la bannière si l'écran
 concerné est au premier plan.
 
-**Fini quand** : 5 payloads de référence verts en test Deno ; tap → route attendue sur les
-deux OS ; préférence « propositions » désactivée → 0 push sur 10 essais ; heures calmes
+**Fini quand** : 5 payloads de référence verts en test Deno ; tap → route attendue sur
+Android et dans la PWA ; préférence « propositions » désactivée → 0 push sur 10 essais ; heures calmes
 respectées ; « Mimi a fait l'habitude » annule la relance locale de l'autre.
 
 **Effort.** 4–5 jours.
 
 ---
 
-### Phase 16 — Widgets iOS / Android
+### Phase 16 — Widgets Android (iOS hors périmètre sans compte Apple)
 
 **Fichiers.** `apps/mobile/src/native/WidgetBridge.ts` (snapshot en props + image 512 px
 écrite dans le `widgetsDirectory` de l'App Group / stockage partagé Android,
-rafraîchissement) ; **iOS : `expo-widgets`** (stable depuis SDK 56, images via
-`widgetsDirectory`, runtime isolé : pas de hooks ni d'async, tout passe par les props) —
-`widgets/ios/CountdownWidget.tsx`, trois familles ; **repli** `apps/mobile/targets/nous-widget/`
-(Swift WidgetKit via `@bacons/apple-targets`, seulement si le rendu Fraunces / crème /
-grain n'est pas atteignable en Expo UI **et** si un Mac est disponible : itérer sur du
-Swift sans Xcode = un build EAS par essai) ; **Android** : `widgets/android/CountdownWidget.tsx`
+rafraîchissement) ; **iOS : hors périmètre** (ADR-009 : aucun compte Apple ; la PWA n'a pas de widget ;
+`expo-widgets` — `widgets/ios/CountdownWidget.tsx` — ne serait repris que si un compte Apple
+apparaissait ou si le spike natif sideloadé tenait, ce que le terrain 2026 rend improbable) ;
+**Android** : `widgets/android/CountdownWidget.tsx`
 (`react-native-android-widget`) ; `features/countdowns/ui/WidgetSettings.tsx` (épinglage
 par appareil et par instance, dans `kv`).
 
-**Fini quand** : 3 tailles sur 2 OS ; capture à 00:01 après changement de jour **sans
+**Fini quand** : 3 tailles sur Android ; capture à 00:01 après changement de jour **sans
 ouvrir l'app** ; tap → écran du moment ; photo épinglée changée → widget à jour < 1 min
 app ouverte.
 
-**Effort.** 6–8 jours.
+**Effort.** 3–4 jours.
 
 ---
 
@@ -627,8 +654,8 @@ liste d'irritants à zéro sur un **script de test écrit** de 30 minutes joué 
 ### Phase 18 — Tests complets
 
 **Contenu.** Parcours critiques × hors ligne / en ligne : **Android automatisé (Maestro),
-iOS par check-list manuelle signée** (ou simulateur / `maestro-ios-device` si un Mac est
-disponible) ; chaos de sync par **proxy** (10 min de coupures aléatoires sur deux appareils) ; charge locale
+PWA iPhone par check-list manuelle signée** (Playwright sur la PWA en CI pour les parcours
+sans geste) ; chaos de sync par **proxy** (10 min de coupures aléatoires sur deux appareils) ; charge locale
 (5 000 événements, 20 000 messages, 3 000 médias) ; audit VoiceOver / TalkBack sur les
 six écrans de [05 §8](05-design-system-mobile.md) ; revue de sécurité (RLS, Storage,
 fonctions, secrets, inscriptions fermées).
@@ -644,13 +671,14 @@ référence ; recherche < 100 ms ; audit a11y sans bloquant.
 ### Phase 19 — Optimisation et préparation production
 
 **Contenu.** Profilage et corrections ; limites de cache d'images et purge locale ;
-builds EAS `production` iOS (TestFlight interne — builds expirant après 90 jours,
-reconstruction trimestrielle au runbook) et Android (APK signé, lien privé) ;
-`expo-updates` ; Supabase : inscriptions fermées, sauvegarde hebdomadaire (`backup.yml`,
+APK `production` arm64-v8a signé avec le keystore unique, publié en **GitHub Release** et
+installé via Obtainium ; compte Android « distribution limitée » enregistré (package +
+SHA-256, deux téléphones autorisés) dès son ouverture en France ; PWA déployée sur Vercel
+si iPhone ; `expo-updates` ; Supabase : inscriptions fermées, sauvegarde hebdomadaire (`backup.yml`,
 le plan gratuit n'a ni PITR ni sauvegardes quotidiennes), purge planifiée par `pg_cron`
-vérifiée, quotas Storage et egress, alertes, décision plan Pro (T9) ; supervision (Sentry RN + Edge
-Functions) ; `docs/RUNBOOK.md` (réactiver un projet en pause, réinitialiser un mot de
-passe, restaurer une sauvegarde, réémettre un build, renouveler TestFlight) ; `README.md`
+vérifiée, quotas Storage et egress, alertes ; supervision maison (table `client_errors` + rapport de
+sync, ADR-009) ; `docs/RUNBOOK.md` (réactiver un projet en pause, réinitialiser un mot de
+passe, restaurer une sauvegarde, réémettre un build, remplacer un téléphone, ré-autoriser un appareil) ; `README.md`
 du monorepo ; rejeu et vérification des trois étapes de `migrate-v1.ts` ; bascule du
 couple sur l'app.
 
@@ -667,8 +695,11 @@ visibles ; web v1 fonctionne toujours ; sauvegarde restaurée une fois sur l'ins
   capsules, moodboard) vers des tables dédiées et des écrans mobiles, une section par
   itération, **chacune commençant par une vraie migration de données** (`items` n'est
   pas synchronisée par le mobile).
-- **Desktop / web** : Expo web ou réécriture des pages sur `packages/domain`.
-- **Live Activities** iOS pour le jour J d'un moment important.
+- **Desktop / web** : réécriture des pages sur `packages/domain` (jamais `react-native-web`),
+  déjà engagée par la variante iPhone (§7) si elle s'applique.
+- **Carte et géocodage** du site v1 à re-plateformer (MapLibre, tuiles vectorielles avec clé
+  gratuite, Photon) : dépendances actuelles en sursis ([00 D20–D21](00-audit.md)).
+- **Live Activities** et widgets iOS : seulement avec un compte Apple Developer.
 
 ## 5. Estimation globale
 
@@ -676,6 +707,8 @@ Somme des efforts indicatifs : **≈ 125–155 jours** de développement pour un
 assistée, phases 1 à 19 (spike compris). Les phases 6, 7, 10 et 11 sont les plus
 incertaines (UI riche, gestes, médias) ; les phases 3, 4, 5 sont les plus déterminantes :
 ne pas les compresser.
+
+**Variante iPhone** (§7) : si l'un des deux a un iPhone, ajouter **≈ 25–35 jours** pour la PWA.
 
 ## 6. Risques et parades
 
@@ -688,13 +721,44 @@ ne pas les compresser.
 | Grille lente sur Android modeste | Mesure dès le spike puis en Phase 7 (`useFrameCallback`) sur l'Android de référence ; gestes sur le thread UI. |
 | Natif des widgets | Snapshot simple ; `expo-widgets` (stable, iOS, images) comme voie principale ; Swift seulement avec un Mac. |
 | Alignement des modules natifs (Reanimated 4, worklets, nitro-modules, gorhom ≥ 5.2.14, compressor ≥ 2.0.3) | `expo@^57.0.17` épinglé, `pnpm.overrides`, `expo doctor` en CI, une montée de SDK par an. |
-| **Maestro ne pilote pas d'iPhone physique** ; sans Mac, pas de simulateur iOS | Protocole asymétrique (Android automatisé, iOS check-list) ; T11 tranchée. |
-| Builds EAS limités (15 iOS + 15 Android par mois en gratuit) | Dev build seulement quand une dépendance native change ; JS via serveur de dev / EAS Update ; budget par phase. |
-| Projet Supabase **en pause** (restaurable en un clic pendant 90 jours seulement — avant le 2026-11-15) et re-pause après 7 jours sans activité | Restauration en Phase 1 ; `keep-alive.yml` qui touche une table ; plan Pro envisagé en Phase 19 (T9). |
-| Storage gratuit : 1 Go, **50 Mo par fichier**, egress 5 Go/mois | Volume mesuré en Phase 1 ; `maxUploadBytes` dérivé du plan ; originaux conservés localement ; décision plan Pro avant la Phase 11. |
+| **Maestro ne pilote pas d'iPhone physique** ; sans Mac, pas de simulateur iOS | Protocole asymétrique (Android automatisé, PWA iPhone en check-list + Playwright) ; T11 tranchée. |
+| Builds : EAS gratuit limité et non contractuel | Builds locaux / CI (dépôt public : minutes illimitées) ; EAS Build en secours ; dev build seulement quand une dépendance native change ; JS via serveur de dev / EAS Update. |
+| Projet Supabase **en pause** après 7 jours sans activité ; restaurations 2025-2026 peu fiables (tables vides, `auth.users` vide, > 30 h) | Restauré le 06/09 ; `ping()` dans l'app + `backup.yml` hebdomadaire ; cron externe en filet ; jamais de plan Pro (ADR-009) ; sauvegarde restaurée une fois par trimestre sur l'instance locale. |
+| Storage gratuit : 1 Go, **50 Mo par fichier**, egress 5 + 5 Go/mois, pas de transformation d'image | Politique médias ADR-009 : vignettes + photos compressées dans l'app, originaux et vidéos dans la galerie, vidéos in-app ≤ 5 Mo, cache local, `maxUploadBytes` = 5 Mo. |
 | Branching Supabase réservé au plan Pro | Instance locale (CLI + Docker) pour les tests ; `pg_cron` est, lui, disponible en gratuit (mais s'arrête si le projet est en pause). |
 | Aucune sauvegarde du nouveau schéma sur le plan gratuit | `backup.yml` hebdomadaire dès la Phase 3 ; export JSON depuis l'app. |
 | Exécution en arrière-plan non garantie (iOS, Doze) | Rien n'en dépend : rappels programmés à l'avance, sync au premier plan et au retour en ligne, push serveur pour l'inter-personnes. |
 | Dérive d'horloge entre téléphones | `sync_guard` ramène l'avance à `now()` ; horloge locale corrigée par `serverOffset` ; règles absorbantes là où l'ordre compte. |
 | Perte de données à la migration v1 | Étapes idempotentes, à sec d'abord, sauvegarde JSON + `pg_dump` avant, web v1 conservé, mapping explicite des comptes (T8). |
-| Compte Apple / Mac | Compte Apple prérequis de la Phase 1 ; EAS pour tout, Xcode seulement en Phase 16 si Swift nécessaire. |
+| **iPhone sans compte Apple** : pas de push, profils de 7 jours, sideloaders cassés à chaque iOS | Client iPhone = PWA à périmètre réduit accepté par écrit (Q22) ; spike natif borné à 2 jours ; un Mac ne change rien (ADR-009). |
+| **Vérification développeur Android** (mondiale « 2027 et au-delà ») : un APK non enregistré ne se met plus à jour hors ADB | Un seul keystore sauvegardé ; compte « distribution limitée » gratuit dès son ouverture en France ; repli advanced flow / ADB ; EAS Update pour le JS. |
+| Dérive des offres gratuites (CARTO, Expo Go, GitHub, Google, Apple ont tous changé leurs règles en 2026) | Adaptateurs dans `packages/data` ; revue trimestrielle des quotas ; provision de 2–5 jours par an ([09 §8](09-zero-depense.md)). |
+
+## 7. Variante iPhone : la PWA comme second client
+
+Ne s'applique que si l'un des deux a un iPhone (T13). Sans compte Apple Developer, aucune
+app native iOS ne tient dans le temps ([09 §2](09-zero-depense.md)) : le client iPhone est
+le site `apps/web`, transformé en **PWA** et étendu écran par écran sur le même domaine et
+le même moteur de sync. Périmètre réduit accepté par écrit (Q22) : pas de widget, pas de
+notification locale sur l'appareil, temps réel app ouverte, gestes web (iOS ≥ 26.5 pour le
+drag).
+
+| Phase | Volet web ajouté | Effort |
+| ----- | ---------------- | -----: |
+| 2 | `vite-plugin-pwa`, manifest, icônes, polices auto-hébergées, service worker avec stratégie de mise à jour et bouton « réinitialiser » ; `packages/data` : adaptateur **IndexedDB (Dexie)** derrière la même interface que `expo-sqlite` ; `ping()` au chargement | 4–6 j |
+| 4–5 | Outbox et sync sur l'adaptateur web ; protocole deux téléphones = Android natif + PWA iPhone | 2–3 j |
+| 6 | Tokens → CSS (déjà prévu), primitives web (feuille, cartes, marques) en React DOM | 3–4 j |
+| 8 | Calendrier web : Jour / Semaine / Mois / Année, drag et poignées en pointer events (pas Reanimated) | 6–8 j |
+| 9–10 | Propositions, bulle, moments, constellation en CSS/SVG | 4–5 j |
+| 11–12 | Souvenirs (upload standard, vignettes canvas), habitudes | 3–4 j |
+| 13–14 | Statistiques, messages, présence | 2–3 j |
+| 15 | Abonnement Web Push (geste utilisateur, jamais silencieux), badge, rappels envoyés par `pg_cron` | 1–2 j |
+| 17 | Réglages, onboarding, safe areas, `visibilitychange`/`pageshow`, tests iOS x.0 | 2–3 j |
+| **Total** | | **≈ 25–35 j** |
+
+Règles propres à la variante : jamais `react-native-web` ; l'UI web est écrite en React DOM
+sur `packages/domain` et `packages/data` ; l'origine reste `nous-ecru.vercel.app` (un
+changement d'origine invalide les abonnements push et l'installation) ; après chaque iOS
+majeur, une check-list de non-régression PWA (clavier, viewport, IndexedDB, push) avant de
+laisser le partenaire mettre à jour.
+

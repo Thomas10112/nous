@@ -39,8 +39,8 @@ Justification, par ordre d'importance :
    par Expo Push Service depuis une Edge Function (identifiants Firebase / APNs à fournir).
 5. **Écosystème 2026** : Expo SDK 57 (RN 0.86, React 19.2, New Architecture par défaut,
    Hermes v1, XCFrameworks pré-compilés, montée « sans rupture » depuis SDK 56), Expo
-   Router, `expo-sqlite` mûr avec Drizzle, EAS pour les builds et la distribution privée
-   (TestFlight interne, APK).
+   Router, `expo-sqlite` mûr avec Drizzle, builds Android locaux ou en CI et APK en GitHub
+   Release (EAS en secours ; ni TestFlight ni compte Apple — ADR-009).
 
 ## Contre-expertise
 
@@ -73,8 +73,10 @@ de décision ci-dessous.
   lui survivent quelle que soit l'issue.
 - **Tout le rendu est réécrit** (le kit web est DOM/CSS/framer-motion). C'est assumé :
   c'était nécessaire de toute façon pour le tactile.
-- **Builds de développement** obligatoires (modules natifs) : pas d'Expo Go. Un compte
-  Apple Developer (99 €/an) est requis pour iOS et les widgets.
+- **Builds de développement** obligatoires dès la Phase 2 (modules natifs ; Expo Go ne sert
+  qu'au spike). **Aucun compte Apple Developer** (refusé, ADR-009) : Android est la
+  plateforme principale, l'iPhone éventuel est servi par la PWA ; les builds Android sont
+  locaux ou en CI, EAS Build n'est qu'un secours.
 - **Discipline de versions** : une montée de SDK par an, alignée sur Reanimated / gorhom /
   compresseur ; `expo doctor` en CI.
 - **Un peu de natif** (Swift pour WidgetKit, config Android) isolé dans

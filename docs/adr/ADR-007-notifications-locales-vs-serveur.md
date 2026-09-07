@@ -36,7 +36,9 @@ pouvoir être désactivées/configurées. Le calendrier fonctionne hors ligne.
 - Deux appareils du même compte reçoivent chacun leurs notifications locales : on
   dédoublonne en gardant `device_id` du dernier appareil actif pour les rappels
   (préférence « Me rappeler sur cet appareil »).
-- Expo Push Service gère l'**envoi**, pas les **identifiants** : projet Firebase gratuit
-  (`google-services.json` injecté par secret EAS, clé de compte de service FCM V1 dans
-  `eas credentials`), clé APNs (créée par EAS avec le compte Apple), `EXPO_ACCESS_TOKEN`
-  pour la fonction Edge (T12).
+- **Amendement du 06/09/2026 (ADR-009)** : pas de clé APNs (aucun compte Apple). Android :
+  projet Firebase gratuit (`google-services.json` injecté par secret Actions), envoi **FCM
+  HTTP v1 directement depuis la fonction Edge** avec la clé de compte de service en secret
+  Supabase, priorité haute ; Expo Push Service reste une option équivalente (T4, T12).
+  iPhone : Web Push VAPID vers la PWA depuis la même fonction Edge, jamais de push silencieux ;
+  les rappels iOS partent du serveur (`pg_cron`) puisqu'une PWA ne planifie rien localement.

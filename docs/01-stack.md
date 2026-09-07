@@ -62,8 +62,8 @@ apprend Reanimated/Gesture Handler et un peu de Swift/Kotlin pour les widgets. L
 pièges connus : versions à aligner (Expo SDK ↔ Reanimated ↔ worklets ↔ nitro-modules ↔
 gorhom ≥ 5.2.14 pour React 19 ↔ compressor 2.x), **SDK 56 et `expo@57.0.x < 17` à
 proscrire** (régression mémoire Hermes V1 sur les worklets), builds de développement
-obligatoires (pas Expo Go dès qu'on a des modules natifs) et **limités à 15 par OS et
-par mois** sur le plan EAS gratuit, Maestro sans iPhone physique, taille d'équipe = 1
+obligatoires (pas Expo Go dès qu'on a des modules natifs), **construits localement ou en
+CI** (EAS Build en secours seulement — contrainte zéro dépense, §8), Maestro sans iPhone physique, taille d'équipe = 1
 donc discipline sur les mises à jour SDK (une par an suffit).
 
 **B. Flutter.** Le meilleur rendu et les meilleures animations « gratuites », mais
@@ -99,7 +99,8 @@ pont natif, pour un résultat que le brief refuse.
 - TanStack Query + Zustand (état d'interface) ;
 - widgets : `expo-widgets` (stable depuis SDK 56, iOS, images via `widgetsDirectory`) et
   `react-native-android-widget` ; `@bacons/apple-targets` en repli (ADR-006) ;
-- EAS Build/Submit, TestFlight interne + APK privé ;
+- builds Android locaux / GitHub Actions, APK en GitHub Release (EAS Build en secours,
+  EAS Update en confort ; ni TestFlight ni compte Apple — §8) ;
 - Vitest, Maestro, GitHub Actions.
 
 Ce que l'on **n'utilise pas** dans le chemin critique : le `BottomSheet` de `@expo/ui`
@@ -147,3 +148,14 @@ juge est pris au sérieux par une **porte de décision** :
 - Le domaine (`packages/domain`) et le moteur de sync sont écrits en TypeScript pur
   **avant** ce spike et lui survivent : si le spike échoue, ils se réutilisent tels quels
   dans l'hybride (Capacitor) ou se transposent en Dart. La perte se limite à ≈ 10 jours.
+
+## 8. Contrainte zéro dépense (06/09/2026)
+
+Le couple ne paie rien : ni compte Apple Developer, ni Supabase Pro, ni Play Console, ni
+Mac. Le verdict de ce document (React Native + Expo) **tient** pour Android, qui devient la
+plateforme principale, entièrement gratuite. Pour un iPhone éventuel, aucune voie native
+gratuite n'est durable (profils de 7 jours, pas de push, sideloaders cassés à chaque iOS) :
+le client iPhone est la **PWA** du site, à périmètre réduit. Détail, sources et matrice
+par poste dans [09-zero-depense.md](09-zero-depense.md) ; décision dans
+[ADR-009](adr/ADR-009-zero-depense.md). Le spike de la porte de décision (§6) se construit
+via **Expo Go** sur les deux téléphones, sans compte Apple.

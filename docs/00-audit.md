@@ -181,3 +181,20 @@ La v1 a **une bonne colonne vertébrale** (adaptateur, tokens, ton, garde-fous) 
 fiable, puis un design system mobile qui reprend l'identité visuelle sans le CSS. Rien
 de propre n'est jeté : le web reste en service (ADR-002), et ce qui est logique pure
 migre dans des paquets partagés, sous tests.
+
+## Complément du 06/09/2026 — dépendances externes du web v1 en sursis
+
+Relevé lors de l'étude zéro dépense ([09 §8](09-zero-depense.md)) :
+
+- **D20 — Tuiles de carte sans clé.** `src/pages/MapPage.tsx` charge
+  `basemaps.cartocdn.com/rastertiles/{voyager,dark_all}` sans clé d'API. CARTO exige
+  désormais une clé (les requêtes sans clé sont filigranées) et retire les tuiles raster.
+  À remplacer par MapLibre + tuiles vectorielles (clé CARTO gratuite ou OpenFreeMap).
+- **D21 — Géocodage en autocomplétion sur Nominatim public.** `MapPage.tsx` interroge
+  `nominatim.openstreetmap.org` à la frappe, sans `User-Agent` identifiant : contraire à la
+  politique d'usage OSM (pas d'autocomplétion, ≤ 1 requête/s), qui bloque par IP. À
+  remplacer par Photon ou le géocodage CARTO, déclenché à la validation, mis en cache.
+- **D22 — Polices Google Fonts en ligne** (`index.html`) : casse tout mode hors ligne et
+  transmet l'IP à Google à chaque ouverture. À auto-héberger (licence OFL).
+- **D23 — Le site n'est pas une PWA** (déjà D19 : ni manifest ni service worker) : le repli
+  iPhone en PWA est un chantier, pas un existant.
