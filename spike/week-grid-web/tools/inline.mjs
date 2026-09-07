@@ -1,6 +1,14 @@
 /* Fabrique la version « page unique » du spike, pour la publier telle quelle
-   (artefact, pièce jointe, clé USB) : les modules sont concaténés dans l'ordre
-   des dépendances, les liens vers le manifeste et le service worker retirés.
+   (artefact, pièce jointe, clé USB).
+
+   Les modules ne sont pas concaténés bêtement : chacun garde sa portée dans une
+   fonction, et ses exports sont déposés dans un registre. Sans cela, deux vues
+   qui déclarent toutes deux `scroller`, `drag` ou `slotH` se marcheraient
+   dessus — c'est exactement ce qui est arrivé quand la vue Jour est arrivée.
+
+   Le sous-ensemble d'ES modules traité est celui du projet : imports nommés,
+   imports d'espace de noms, exports de déclarations. Ni export par défaut, ni
+   ré-export, ni dépendance circulaire.
 
    Usage : node tools/inline.mjs > dist/nous-spike-web.html                  */
 
@@ -10,49 +18,55 @@ import { dirname, resolve } from 'node:path'
 const ROOT = new URL('..', import.meta.url).pathname
 const ENTRY = 'src/main.js'
 
+const IMPORT_RE = /^import\s+(?:\*\s+as\s+(\w+)|\{([^}]*)\}|(\w+))\s+from\s+'([^']+)'\s*;?\s*$/gm
+
 /** Ordre topologique des modules à partir de l'entrée. */
 const order = []
 const seen = new Set()
-const namespaces = new Map() // alias -> chemin du module
+
+/** @param {string} rel @param {string} spec */
+const resolveDep = (rel, spec) => resolve(dirname(resolve(ROOT, rel)), spec).slice(ROOT.length)
 
 function walk(rel) {
   if (seen.has(rel)) return
   seen.add(rel)
   const src = readFileSync(resolve(ROOT, rel), 'utf8')
-  for (const m of src.matchAll(/^import\s+(?:\*\s+as\s+(\w+)|\{[^}]*\}|\w+)\s+from\s+'([^']+)'/gm)) {
-    const [, alias, spec] = m
-    if (!spec.startsWith('.')) continue
-    const dep = resolve(dirname(resolve(ROOT, rel)), spec).slice(ROOT.length)
-    if (alias) namespaces.set(alias, dep)
-    walk(dep)
+  for (const m of src.matchAll(IMPORT_RE)) {
+    if (m[4].startsWith('.')) walk(resolveDep(rel, m[4]))
   }
   order.push(rel)
 }
 walk(ENTRY)
 
-/** Noms exportés d'un module (pour reconstruire les imports d'espace de noms). */
+/** Noms exportés d'un module. */
 function exportsOf(src) {
   const names = []
-  for (const m of src.matchAll(/^export\s+(?:async\s+)?(?:const|let|function)\s+(\w+)/gm)) names.push(m[1])
+  for (const m of src.matchAll(/^export\s+(?:async\s+)?(?:const|let|function|class)\s+(\w+)/gm)) names.push(m[1])
   for (const m of src.matchAll(/^export\s+\{([^}]+)\}/gm)) {
     for (const n of m[1].split(',')) names.push(n.trim().split(/\s+as\s+/).pop().trim())
   }
   return [...new Set(names)]
 }
 
-let bundle = ''
+let bundle = 'const __M = {}\n'
 for (const rel of order) {
   const src = readFileSync(resolve(ROOT, rel), 'utf8')
+  const names = exportsOf(src)
   const body = src
-    .replace(/^import[^;\n]*from\s+'[^']+'\s*;?\s*$/gm, '')
+    // chaque import devient une liaison locale prise dans le registre
+    .replace(IMPORT_RE, (whole, ns, named, def, spec) => {
+      if (!spec.startsWith('.')) return whole
+      const dep = JSON.stringify(resolveDep(rel, spec))
+      if (ns) return `const ${ns} = __M[${dep}]`
+      if (named) return `const {${named}} = __M[${dep}]`
+      return `const ${def} = __M[${dep}].default`
+    })
     .replace(/^export\s+(?=(?:async\s+)?(?:const|let|function|class))/gm, '')
     .replace(/^export\s+\{[^}]*\}\s*;?\s*$/gm, '')
-  bundle += `\n/* ===== ${rel} ===== */\n${body}\n`
-  for (const [alias, dep] of namespaces) {
-    if (dep !== rel) continue
-    bundle += `const ${alias} = { ${exportsOf(src).join(', ')} }\n`
-    namespaces.delete(alias)
-  }
+
+  bundle +=
+    `\n/* ===== ${rel} ===== */\n__M[${JSON.stringify(rel)}] = (() => {\n${body}\n` +
+    `return { ${names.join(', ')} }\n})()\n`
 }
 
 const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
