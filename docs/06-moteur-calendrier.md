@@ -114,8 +114,8 @@ calendrier est **un seul écran** ; la vue et la date ancrée vivent dans le sto
 | Vue      | Moteur                                            | Rendu                                                                                                   |
 | -------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | Accueil  | `agendaFor`                                       | héros → proposition en attente → aujourd'hui → prochaine date → présence + message rapide              |
-| Jour     | `itemsForRange` + `layoutDay` + `layoutBands`     | `DateStrip` + grille 7 h → 23 h (nuit repliée), bande du haut, drag / resize / création par long-press  |
-| Semaine  | idem × 7 + `layoutBands`                          | **Portrait : colonne focus** — le jour tapé prend 2,6 parts, les six autres 0,73 (spring `firm`) ; colonnes étroites = marques et teintes seulement ; drag/resize dans la colonne focus ; swipe = semaine ±1 ; tap sur un en-tête = changer le focus. Paysage : 7 colonnes égales. |
+| Jour     | `itemsForRange` + `layoutDay` + `layoutBands` + `phraseOfDay` | **La vue du calendrier**, pleine largeur : titre, **phrase du jour** en serif italique, **bandeau de sept coupes**, bande du haut, grille 7 h → 23 h (nuit repliée), drag / resize / création par appui long. Balayage horizontal = jour ± 1 ; balayage du bandeau = semaine ± 1 ([ADR-010](adr/ADR-010-jour-dabord.md)). |
+| ~~Semaine~~ | — | **Supprimée** : 47 px par jour en portrait, une carte n'y est plus une carte. Le bandeau de coupes la remplace comme vue d'ensemble ([ADR-010](adr/ADR-010-jour-dabord.md)). |
 | Mois     | `monthGrid` + `itemsForRange` + `layoutBands` par ligne | **défilement vertical infini** (pas de pager) ; `MonthCell` = chiffre + marques + bandes, aucun titre ; tap jour = sélection + agenda du jour **sous la grille** ; tap sur l'agenda → Jour |
 | Année    | `yearOverview`                                    | 12 `YearTile` (étoiles, nombre de souvenirs) ; tap → Mois                                              |
 

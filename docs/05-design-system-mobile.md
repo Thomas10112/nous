@@ -224,7 +224,9 @@ Un seul composant, dans l'onglet Souvenirs (la vue Année du calendrier ne montr
 ### 4.4 Navigation au pouce
 
 Voir [02 §2](02-architecture.md) : tabbar Accueil · Calendrier · [+] · Souvenirs ·
-Messages ; « + » = Sheet de création à 40 % ; `ViewSwitch` et « Aujourd'hui » en bas ;
+Messages ; « + » = Sheet de création à 40 % ; **plus de `ViewSwitch`** — le calendrier n'a
+plus qu'une vue ([ADR-010](adr/ADR-010-jour-dabord.md)) — seule « Aujourd'hui » reste en bas,
+et seulement hors d'aujourd'hui ;
 avatar/présence en haut à droite → Réglages ; Accueil ordonné pour que les actions
 soient dans le tiers bas ; aucun push dans l'onglet Calendrier.
 

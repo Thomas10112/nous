@@ -27,7 +27,7 @@ le tableau fait foi). **Ordre linéaire recommandé** pour un développeur seul 
 | 4     | Stockage local & hors ligne            | 3           | Base par compte, outbox, curseurs transactionnels, FTS ; CRUD complet en mode avion       |
 | 5     | Synchronisation temps réel             | 4           | Registre de modes, push/pull/LWW/canal privé ; convergence 3/3 au protocole deux téléphones |
 | 6     | Design system mobile                   | 2           | `packages/theme`, `ui/*`, galerie + **quatre maquettes vivantes validées par le couple**  |
-| 7     | Moteur calendrier & Accueil            | 3, 6        | Vues Accueil / Jour / Semaine / Mois / Année, gestes arbitrés, données de démonstration  |
+| 7     | Moteur calendrier, vue Jour & Accueil  | 3, 6        | Vues Accueil / Jour / Semaine / Mois / Année, gestes arbitrés, données de démonstration  |
 | 8     | Événements personnels                  | 4, 5, 7     | Créer / éditer / déplacer / supprimer / restaurer, hors ligne et sur l'autre téléphone   |
 | 9     | Activités à deux & propositions        | 8           | Bulle : accepter / refuser / contre-proposer / retirer ; gardes serveur                   |
 | 10    | Moments importants, chapitres, comptes à rebours, rappels locaux | 8 | Constellation, occurrences, chapitres, « Encore 24 dodos », planificateur local |
@@ -441,15 +441,19 @@ sur données de démonstration (repositories en mémoire).
 
 **Tests.** Contrat de [06 §5](06-moteur-calendrier.md) : mise en page, bandes sur ligne de
 mois, DST, **égalité worklets / domaine sur 1 000 cas**, `agendaFor`, gestes sur l'Android
-de référence, **0 frame > 16 ms** sur 300 items ; captures de référence de Phase 6
+de référence, **p99 sous le budget de l'écran mesuré** sur 300 items ; `phraseOfDay` sur les cas
+limites (journée vide, tout le matin, tout le soir, un seul creux, deux creux égaux) ; captures de référence de Phase 6
 inchangées ; cibles ≥ 44 pt sur `EventBlock`, poignées, `MonthCell`.
 
-**Fini quand** : Accueil affiche aujourd'hui et les 7 prochains jours ; navigation au
-swipe ; drag / resize / création par long-press ; colonne focus en Semaine ; densité,
+**Fini quand** : Accueil affiche aujourd'hui et les 7 prochains jours ; **la vue Jour, son
+bandeau de coupes et sa phrase du jour** sont en place ([ADR-010](adr/ADR-010-jour-dabord.md)) ;
+navigation au balayage (jour ± 1 sur la page, semaine ± 1 sur le bandeau) ; drag / resize /
+création par appui long ; dépôt d'un événement sur une tranche du bandeau ; densité,
 `hourRange` et reduced-motion respectés ; anti-motifs de [05 §4.0](05-design-system-mobile.md)
-absents à la revue.
+absents à la revue — dont la jauge de remplissage et le fond dégradé sur un contenant, tous
+deux écartés par le jury de conception.
 
-**Effort.** 9–11 jours.
+**Effort.** 7–9 jours (la vue la plus coûteuse, la Semaine à sept colonnes, disparaît).
 
 ---
 
