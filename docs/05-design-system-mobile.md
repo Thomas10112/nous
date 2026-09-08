@@ -172,10 +172,12 @@ segmenté de vues en haut de l'écran.
   dégradé « nous » ; `gold` plein le jour J avec « C'est aujourd'hui 🤍 ».
 - **`MonthCell`** : chiffre Fraunces + jusqu'à quatre marques + bandes multi-jours ;
   jamais de titre. **`YearTile`** : mois en Fraunces, étoiles de moments, nombre de souvenirs.
-- **`DayPager`** (3 pages recyclées), **`DateStrip`** (7 jours sous le titre en vue Jour,
-  swipe partagé avec le pager), **`ViewSwitch`** (pilule flottante en bas) + pilule
-  **« Aujourd'hui »** (visible seulement si la plage n'inclut pas aujourd'hui), titre de
-  date Fraunces en haut à gauche (« septembre 2026 », tappable → picker mois/année).
+- **`DayPager`** (3 pages recyclées), **`DateStrip`** (les sept jours au-dessus de la
+  page, swipe partagé avec le pager), **`DayCut`** (la coupe d'un jour : tranche de 7 h à
+  23 h, marques posées à leur heure), **`DayPhrase`** (« libre de 13 h 30 à 17 h »), pilule
+  **« Aujourd'hui »** (visible seulement hors d'aujourd'hui), titre de date Fraunces en
+  haut à gauche (« septembre 2026 », tappable → Mois). Pas de `ViewSwitch`
+  ([ADR-010](adr/ADR-010-jour-dabord.md)).
 
 ### 4.2 `ProposalBubble`
 

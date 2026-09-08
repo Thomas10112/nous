@@ -139,12 +139,13 @@ application » au-dessus du coût de portage, et parce que le plafond de la WebV
 structurel là où le risque RN est un risque de finition. Mais le désaccord du premier
 juge est pris au sérieux par une **porte de décision** :
 
-- **Phase 1 contient un spike de deux semaines** : vue Semaine 48 créneaux × 7 jours sur
+- **Phase 1 contient un spike de deux semaines** : une journée de 48 créneaux sur
   build de développement EAS, installée sur les deux téléphones réels — long-press →
   soulèvement haptique → drag sur worklet → accrochage 30 min → redimensionnement par
   poignée → pinch de hauteur de créneau, avec un scroll vertical qui ne se bat pas avec
-  le drag. Critères mesurables : 60 fps soutenus pendant le drag sur l'Android du couple
-  (120 sur l'iPhone si l'écran le permet), aucun geste perdu sur 50 essais, clavier de
+  le drag. Critères mesurables : p99 sous le budget de l'écran mesuré pendant le drag sur
+  l'Android du couple — 8,3 ms, sa dalle montant à 120 Hz ; l'iPhone 16 est à 60 Hz, soit
+  exactement le plafond de rendu de Safari —, aucun geste perdu sur 50 essais, clavier de
   la messagerie sans saut, jugé par le couple et non par le développeur.
 - Le domaine (`packages/domain`) et le moteur de sync sont écrits en TypeScript pur
   **avant** ce spike et lui survivent : si le spike échoue, ils se réutilisent tels quels

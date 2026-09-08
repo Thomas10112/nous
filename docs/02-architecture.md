@@ -66,9 +66,10 @@ app/
   (tabs)/_layout            Accueil · Calendrier · [+] · Souvenirs · Messages
     index                   Accueil : héros → proposition en attente → aujourd'hui →
                             prochaine date → présence + message rapide (tiers bas)
-    calendar/index          UN seul écran ; la vue (jour/semaine/mois/année) et la date
-                            ancrée vivent dans le store Zustand ; ViewSwitch = pilule
-                            flottante en bas, « Aujourd'hui » à sa droite si besoin ;
+    calendar/index          UN seul écran : la journée en pleine page + bandeau de sept
+                            coupes ; { day, weekStart, notebook, slotZoom } dans le store
+                            Zustand (ADR-010, plus de ViewSwitch) ; le Mois s'ouvre depuis
+                            le nom du mois ; pilule « Aujourd'hui » en bas si besoin ;
                             chips Habitudes / Propositions ; aucun push dans l'onglet
     calendar/[view]         alias de lien profond : écrit le store et redirige
     memories/index          Constellation des moments + souvenirs + galerie

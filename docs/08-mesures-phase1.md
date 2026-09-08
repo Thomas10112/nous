@@ -74,5 +74,5 @@ Conséquences :
 | Compte Apple Developer (T2) | à ouvrir |
 | Mac disponible ? (T11) | à répondre |
 | Modèles et OS des deux téléphones (T10) | à fournir |
-| Spike de la vue Semaine | code prêt dans `spike/week-grid/` (typecheck vert) ; **build EAS et verdict sur les deux téléphones** à faire par le couple ([README](../spike/week-grid/README.md)) |
+| Spike de la vue Jour | code prêt dans `spike/week-grid/` (typecheck vert) ; **build EAS et verdict sur les deux téléphones** à faire par le couple ([README](../spike/week-grid/README.md)) |
 | Mapping des comptes (§2) | à confirmer |

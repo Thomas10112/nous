@@ -135,5 +135,6 @@ calendrier est **un seul écran** ; la vue et la date ancrée vivent dans le sto
 - Gestes (Maestro sur l'**Android de référence** nommé en Phase 1, T10) : long-press puis
   déplacement < 8 px ne bloque pas le scroll ; drag au bord fait défiler ; pinch garde le
   point focal ; swipe à 45° = scroll ; un bloc de 30 min en compact reste saisissable.
-- Performance : vue Semaine avec 300 items, **0 frame > 16 ms** pendant 3 s de scroll,
+- Performance : vue Jour avec 300 items, **p99 sous le budget de l'écran mesuré**
+  (8,3 ms à 120 Hz, 16,7 ms à 60 Hz) et aucune frame > 25 ms pendant 5 s de glissé continu,
   mesuré par `useFrameCallback` (compteur de frames longues) sur l'Android de référence.

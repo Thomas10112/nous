@@ -34,5 +34,5 @@ apparence, ses limites de personnalisation et son risque de maintenance, pour no
 - Contrôle total des gestes (long-press pour saisir, drag des poignées, swipe entre jours,
   pinch sur la hauteur de slot) et des animations.
 - Réutilisable sur le web ensuite (la logique ne dépend pas de la plateforme).
-- Risque à surveiller : performance de la vue Semaine avec beaucoup d'items → rendu par
+- Risque à surveiller : performance du Mois avec beaucoup d'items → rendu par
   colonne mémoïsé, items hors écran non montés, mesures dans des worklets.

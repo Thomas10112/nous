@@ -21,7 +21,7 @@ le tableau fait foi). **Ordre linéaire recommandé** pour un développeur seul 
 | Phase | Titre                                  | Dépend de   | Livrable vérifiable                                                                     |
 | ----- | -------------------------------------- | ----------- | --------------------------------------------------------------------------------------- |
 | 0     | Audit                                  | —           | `docs/00-audit.md` ✅                                                                    |
-| 1     | Stack mobile et spike                  | 0           | `docs/01-stack.md`, ADR-001, **spike de la vue Semaine sur les deux téléphones** (Expo Go), mesures, ADR-009 zéro dépense — **validation attendue** |
+| 1     | Stack mobile et spike                  | 0           | `docs/01-stack.md`, ADR-001, **spike de la vue Jour sur les deux téléphones** (Expo Go), mesures, ADR-009 zéro dépense — **validation attendue** |
 | 2     | Architecture & monorepo                | 1           | Monorepo pnpm, app Expo connectée à Supabase sur les deux téléphones, web non régressé, CI, `ping()` anti-pause, `backup.yml` |
 | 3     | Modèle de données & repositories       | 2           | Migrations sur instance locale puis projet réel, identité du couple installée, moteur de récurrence, repositories testés en Node |
 | 4     | Stockage local & hors ligne            | 3           | Base par compte, outbox, curseurs transactionnels, FTS ; CRUD complet en mode avion       |
@@ -166,11 +166,13 @@ plus risqué de la stack tient, et lever les prérequis. **Point de validation.*
   (`VITE_SUPABASE_*` du déploiement). Ces chiffres dimensionnent la migration et le plan
   Supabase (T9).
 - **Deux spikes — la porte de décision** ([01 §6](01-stack.md)), un par client, parce que
-  les deux téléphones ne recevront pas le même : vue Semaine 48 créneaux × 7 jours,
+  les deux téléphones ne recevront pas le même : une journée de 48 créneaux en pleine
+  largeur surmontée du bandeau de sept coupes ([ADR-010](adr/ADR-010-jour-dabord.md)),
   long-press 350 ms → soulèvement → accrochage 30 min → poignées → pinch de hauteur de
-  créneau, scroll qui ne se bat pas avec le drag, colonne focus en portrait
+  créneau, scroll qui ne se bat pas avec le drag, pager horizontal jour ±1
   ([06 §3.7, §4](06-moteur-calendrier.md)), plus un écran de messagerie factice pour le
-  clavier.
+  clavier. La grille Semaine à sept colonnes que les spikes contenaient d'abord y reste
+  accessible, pour comparaison seulement.
   - [`spike/week-grid`](../spike/week-grid/README.md) — **React Native**, jeté ensuite,
     lancé via **Expo Go** (gratuit, sans compte Apple) ; mesure de référence sur un build
     release local sur le **S24 Ultra**.
@@ -422,7 +424,7 @@ téléphones dans les quatre thèmes.
 
 ### Phase 7 — Moteur calendrier et Accueil
 
-**Objectif.** [06](06-moteur-calendrier.md) : logique pure, cinq vues, gestes arbitrés,
+**Objectif.** [06](06-moteur-calendrier.md) : logique pure, vues Jour / Mois / Année, gestes arbitrés,
 sur données de démonstration (repositories en mémoire).
 
 **Fichiers.**
@@ -430,7 +432,8 @@ sur données de démonstration (repositories en mémoire).
 - `packages/domain/src/calendar/{window,items,agenda,layoutDay,layoutBands,snap,conflicts,grids,navigation}.ts` + tests.
 - `features/calendar/{store.ts,hooks/useCalendarRange.ts,hooks/useCalendarItems.ts}`
   (filtre `visible.*`), `features/calendar/gestures/{worklets.ts,useDragEvent,useResizeEvent,useCreateByLongPress,usePinchSlotHeight}.ts`,
-  `features/calendar/ui/{TimeGrid,DayColumn,EventBlock,Handles,AllDayBand,NowLine,DayPager,DateStrip,WeekView,MonthGrid,MonthCell,YearOverview,YearTile,ViewSwitch,TodayPill}.tsx`
+  `features/calendar/ui/{TimeGrid,DayColumn,EventBlock,Handles,AllDayBand,NowLine,DayPager,DateStrip,DayCut,DayPhrase,MonthGrid,MonthCell,YearOverview,YearTile,TodayPill}.tsx`
+  (ni `WeekView` ni `ViewSwitch` : [ADR-010](adr/ADR-010-jour-dabord.md))
   (déplacés depuis les maquettes, sans changement visuel).
 - `features/home/{screen/HomeScreen.tsx,ui/TodayCard.tsx,ui/SoonList.tsx,ui/EmptyToday.tsx,hooks/useAgenda.ts}`,
   `app/(tabs)/index.tsx`, `app/(tabs)/calendar/{index,[view]}.tsx`.

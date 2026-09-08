@@ -65,10 +65,11 @@ de décision ci-dessous.
 
 ## Conséquences
 
-- **Porte de décision en Phase 1** : un spike de deux semaines (vue Semaine 48 × 7 avec
+- **Porte de décision en Phase 1** : un spike de deux semaines (une journée de 48 créneaux avec
   long-press, drag sur worklet, redimensionnement, pinch, scroll qui ne se bat pas avec
   le drag) sur build de développement installé sur les deux téléphones du couple, avec
-  des critères mesurables (60 fps soutenus, aucun geste perdu sur 50 essais, clavier
+  des critères mesurables (p99 sous le budget de l'écran **mesuré** — 8,3 ms à 120 Hz sur
+  le S24 Ultra, 16,7 ms à 60 Hz —, aucun geste perdu sur 50 essais, clavier
   stable). Le domaine et le moteur de sync sont écrits en TypeScript pur avant le spike et
   lui survivent quelle que soit l'issue.
 - **Tout le rendu est réécrit** (le kit web est DOM/CSS/framer-motion). C'est assumé :
