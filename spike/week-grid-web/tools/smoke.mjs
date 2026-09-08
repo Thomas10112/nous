@@ -9,7 +9,11 @@ import { createRequire } from 'node:module'
 const { chromium, devices } = createRequire(import.meta.url)('playwright')
 
 const URL = process.env.URL ?? 'http://127.0.0.1:8099/'
-const browser = await chromium.launch()
+// CHROME=/chemin/vers/chromium permet d'utiliser un navigateur déjà présent
+// quand celui qu'attend playwright n'est pas installé.
+const browser = await chromium.launch(
+  process.env.CHROME ? { executablePath: process.env.CHROME } : {},
+)
 const context = await browser.newContext({ ...devices['iPhone 13'], hasTouch: true })
 const page = await context.newPage()
 
@@ -47,18 +51,20 @@ check('7 colonnes', (await page.locator('.col').count()) === 7)
 const target = page.locator('#screen-week .ev').first()
 let box = await target.boundingBox()
 const before = await page.evaluate(() => document.getElementById('scroller').scrollTop)
+// position du bloc DANS la grille, avant le geste : c'est elle qui ne doit pas
+// bouger. La comparer au premier `.ev` du document reviendrait à interroger la
+// vue Jour, qui est rendue elle aussi.
+const topInGridBefore = await target.evaluate((el) => el.style.top)
 await touch('touchStart', box.x + box.width / 2, box.y + 8)
 await sleep(60)
 for (let i = 1; i <= 6; i += 1) await touch('touchMove', box.x + box.width / 2, box.y + 8 - i * 12)
 await touch('touchEnd', 0, 0)
 await sleep(120)
 const after = await page.evaluate(() => document.getElementById('scroller').scrollTop)
-const boxAfterScroll = await target.boundingBox()
+const topInGridAfter = await target.evaluate((el) => el.style.top)
 check('mouvement avant 350 ms : la grille défile', after !== before, `scrollTop ${before} → ${after}`)
 check('mouvement avant 350 ms : le bloc ne bouge pas dans la grille',
-  (await target.evaluate((el) => el.style.top)) === (await page.evaluate(() => {
-    const el = document.querySelector('.ev'); return el.style.top
-  })))
+  topInGridAfter === topInGridBefore, `top ${topInGridBefore} → ${topInGridAfter}`)
 
 /* 3. long-press puis glissé : le bloc s'accroche au créneau suivant */
 await target.scrollIntoViewIfNeeded()

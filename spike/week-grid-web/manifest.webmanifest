@@ -1,7 +1,7 @@
 {
   "name": "Nous — spike web",
   "short_name": "Nous spike",
-  "description": "Spike de la vue Semaine, version web : gestes, clavier et mesures sur iPhone.",
+  "description": "Spike de la vue Jour, version web : gestes, clavier et mesures sur iPhone.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

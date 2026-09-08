@@ -69,6 +69,7 @@ for (const rel of order) {
     `return { ${names.join(', ')} }\n})()\n`
 }
 
+const icon = readFileSync(resolve(ROOT, 'icons/icon-192.png')).toString('base64')
 const html = readFileSync(resolve(ROOT, 'index.html'), 'utf8')
 // on part du <meta viewport> : sans lui, un navigateur mobile met la page en
 // 980 px de large et rien ne tient (et c'est lui qui porte viewport-fit=cover,
@@ -77,6 +78,9 @@ const inner = html
   .slice(html.indexOf('<meta name="viewport"'), html.lastIndexOf('</body>'))
   .replace(/^\s*<link rel="manifest"[^>]*>\s*$/gm, '')
   .replace(/^\s*<link rel="apple-touch-icon"[^>]*>\s*$/gm, '')
+  // l'icône est embarquée : un fichier unique doit se suffire, sinon le
+  // navigateur va chercher /favicon.ico et ramène un 404.
+  .replace(/(<link rel="icon" href=")[^"]*(")/, `$1data:image/png;base64,${icon}$2`)
   .replace(/<script type="module" src="[^"]*"><\/script>/, `<script type="module">\n${bundle}\n</script>`)
 
 process.stdout.write(inner.trimStart() + '\n')
