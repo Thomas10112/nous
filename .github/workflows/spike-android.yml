@@ -4,7 +4,7 @@ name: APK de la maquette Android
 # pré-version, pour qu'il soit installable sur le S24 Ultra sans PC ni compte.
 # Le dépôt étant public, les minutes GitHub sont gratuites et illimitées.
 #
-# Ce n'est PAS l'application : c'est la maquette de la vue Semaine, jetable,
+# Ce n'est PAS l'application : c'est la maquette de la vue Jour, jetable,
 # qui sert à mesurer les gestes et la fluidité avant d'écrire le vrai code.
 
 on:
@@ -58,15 +58,15 @@ jobs:
           SRC=$(find android/app/build/outputs/apk/release -name '*.apk' | head -1)
           test -n "$SRC" || { echo "aucun APK produit"; exit 1; }
           mkdir -p out
-          cp "$SRC" out/nous-maquette-semaine.apk
-          SIZE=$(du -h out/nous-maquette-semaine.apk | cut -f1)
+          cp "$SRC" out/nous-maquette-jour.apk
+          SIZE=$(du -h out/nous-maquette-jour.apk | cut -f1)
           echo "taille=$SIZE" >> "$GITHUB_OUTPUT"
           echo "APK : $SIZE"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: nous-maquette-semaine-apk
-          path: spike/week-grid/out/nous-maquette-semaine.apk
+          name: nous-maquette-jour-apk
+          path: spike/week-grid/out/nous-maquette-jour.apk
           retention-days: 14
 
       - name: Publier la pre-version
@@ -74,9 +74,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "maquette-android-${{ github.run_number }}" \
-            out/nous-maquette-semaine.apk \
+            out/nous-maquette-jour.apk \
             --repo "${{ github.repository }}" \
             --target "${{ github.sha }}" \
-            --title "Maquette Semaine pour Android (${{ steps.apk.outputs.taille }})" \
+            --title "Maquette Jour pour Android (${{ steps.apk.outputs.taille }})" \
             --prerelease \
             --notes-file "$GITHUB_WORKSPACE/.github/release-notes/maquette-android.md"

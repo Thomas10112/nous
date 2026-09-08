@@ -1,10 +1,15 @@
-# Spike — vue Semaine (Phase 1, porte de décision)
+# Spike — vue Jour (Phase 1, porte de décision)
 
-Projet Expo **jetable**. Il ne sert qu'à répondre à une question : une grille de
-48 créneaux × 7 jours avec long-press → drag → accrochage 30 min → poignées →
-pinch, et un scroll qui ne se bat pas avec le drag, est-ce que « ça sent l'app »
-ou « ça sent le site » ? Le code est jeté ensuite ; on garde la décision et les
-réglages de gestes ([docs/01-stack.md §6](../../docs/01-stack.md)).
+Projet Expo **jetable**. Il ne sert qu'à répondre à une question : une journée de
+48 créneaux avec long-press → drag → accrochage 30 min → poignées → pinch, et un
+scroll qui ne se bat pas avec le drag, est-ce que « ça sent l'app » ou « ça sent
+le site » ? Le code est jeté ensuite ; on garde la décision et les réglages de
+gestes ([docs/01-stack.md §6](../../docs/01-stack.md)).
+
+La grille Semaine à sept colonnes qu'il contenait d'abord a été **abandonnée**
+après essai sur téléphone réel : 47 px par jour, c'est un tesson, pas une carte
+([ADR-010](../../docs/adr/ADR-010-jour-dabord.md)). Elle survit dans un onglet,
+pour comparaison seulement.
 
 Ce spike-ci vise le **Galaxy S24 Ultra**, qui recevra l'application React Native.
 L'iPhone 16 recevra la PWA : son jumeau web est dans
@@ -20,10 +25,19 @@ iPhone compris, sans compte Apple Developer ([docs/09 §3](../../docs/09-zero-de
   marquée `'worklet'` ici pour tourner sur le thread UI).
 - `src/domain/layout.ts` — chevauchements : deux items = cartes posées l'une sur l'autre,
   au-delà = colonnes.
-- `src/screens/WeekScreen.tsx` — la grille : colonne focus en portrait (2,6 parts contre
-  0,73), scroll vertical natif, pinch de hauteur de créneau avec point focal conservé,
-  auto-défilement au bord pendant un drag, pager horizontal (semaine ±1), ligne
-  « maintenant », compteur de frames longues.
+- `src/domain/phrase.ts` — la phrase du jour (« libre de 13 h 30 à 17 h ») et le poids
+  d'encre du chiffre dans le bandeau. Port fidèle de la version web, vérifié par
+  différentiel sur 20 000 tirages.
+- `src/domain/dates.ts` — semaine affichée, noms français en dur (Hermes n'embarque pas
+  toujours l'ICU complet sur Android).
+- `src/screens/DayScreen.tsx` — **la vue principale** : une journée en pleine largeur,
+  scroll vertical natif, pinch de hauteur de créneau avec point focal conservé,
+  auto-défilement au bord pendant un drag, pager horizontal (jour ±1, la page suit le
+  doigt), ligne « maintenant », compteur de frames longues.
+- `src/components/DayStrip.tsx` — le bandeau : sept tranches de 7 h à 23 h où les marques
+  sont posées à leur heure réelle. Il donne le rythme d'une journée, jamais son contenu.
+- `src/screens/WeekScreen.tsx` — l'ancienne grille sept colonnes, gardée pour comparaison :
+  colonne focus en portrait (2,6 parts contre 0,73), pager (semaine ±1).
 - `src/components/DayColumn.tsx` — fond de colonne : long-press 350 ms → fantôme de deux
   créneaux que l'on étire → création ; tap → désélection.
 - `src/components/EventBlock.tsx` — bloc : long-press 350 ms → soulèvement (haptique) →
@@ -77,8 +91,9 @@ Aucun build iOS n'est nécessaire pour le spike ; Expo Go suffit à juger les ge
 | Long-press puis déplacement < 8 px ne bloque pas le scroll | poser le doigt, bouger un peu avant 350 ms : la grille doit défiler |
 | Drag au bord fait défiler | traîner un bloc vers le haut/bas de l'écran |
 | Pinch garde le point focal | le créneau sous les doigts reste sous les doigts |
-| Swipe à 45° = scroll, pas pager | un swipe franc horizontal change de semaine ; un swipe en diagonale défile |
-| Colonne focus | taper un en-tête de jour : la colonne s'élargit avec un ressort, les autres se resserrent |
+| Swipe à 45° = scroll, pas pager | un swipe franc horizontal change de jour ; un swipe en diagonale défile |
+| Le bandeau se lit | les marques disent le rythme de chaque jour à bout de bras, sans zoom |
+| La phrase dit vrai | « libre de … à … » correspond bien au creux qu'on voit dans la journée |
 | Clavier de la messagerie | le champ reste visible, la liste suit, aucun saut à l'ouverture/fermeture |
 | Le verdict du couple | « ça sent l'app » ou « ça sent le site » |
 
@@ -94,3 +109,9 @@ Notez les résultats dans `docs/07-questions-ouvertes.md` (T10) et la décision 
 - Le téléphone ne trouve pas le serveur : `npx expo start --go --tunnel`.
 - Le scroll se bat avec le drag : c'est précisément ce que le spike doit révéler ; noter
   sur quel OS et dans quelles conditions.
+
+## L'APK, sans PC
+
+Chaque poussée sur ce dossier reconstruit l'APK dans GitHub Actions et le publie en
+pré-version (`.github/workflows/spike-android.yml`). Rien à installer, rien à payer :
+le dépôt est public, donc les minutes sont gratuites.

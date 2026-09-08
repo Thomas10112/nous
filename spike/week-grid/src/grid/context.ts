@@ -25,6 +25,12 @@ export interface GridShared {
   dragActive: SharedValue<number>
   /** jour en colonne focus (portrait) */
   focusDay: SharedValue<number>
+  /**
+   * 1 en vue Jour : le déplacement latéral ne change plus de journée.
+   * C'est le geste que l'ADR-010 fait disparaître — une seule colonne, donc
+   * plus rien à arbitrer entre « je change d'heure » et « je change de jour ».
+   */
+  lockDay: SharedValue<number>
   /** largeurs cibles des colonnes focus / étroite */
   focusW: SharedValue<number>
   narrowW: SharedValue<number>

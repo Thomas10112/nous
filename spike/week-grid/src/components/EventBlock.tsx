@@ -52,7 +52,7 @@ export function EventBlock({ event, selected, column, columns, nested }: Props) 
     return Math.round((fingerDY.value + grid.scrollY.value - scrollAtStart.value) / grid.slotH.value)
   })
   const dragDay = useDerivedValue(() => {
-    if (lifted.value === 0) return window.day
+    if (lifted.value === 0 || grid.lockDay.value === 1) return window.day
     const x = grid.colLefts.value[window.day]! + grid.colWidths.value[window.day]! / 2 + fingerDX.value
     return dayAt(x, grid.colLefts.value, grid.colWidths.value)
   })

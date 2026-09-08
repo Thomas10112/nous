@@ -3,20 +3,23 @@ import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
+import { DayScreen } from './src/screens/DayScreen'
 import { WeekScreen } from './src/screens/WeekScreen'
 import { ChatScreen } from './src/screens/ChatScreen'
 import { colors, fonts } from './src/theme'
 
-type Screen = 'week' | 'chat'
+type Screen = 'day' | 'week' | 'chat'
+
+const LABELS: Record<Screen, string> = { day: 'Jour', week: 'Semaine', chat: 'Messages' }
 
 function Shell() {
-  const [screen, setScreen] = useState<Screen>('week')
+  const [screen, setScreen] = useState<Screen>('day')
   const insets = useSafeAreaInsets()
   return (
     <View style={styles.root}>
-      {screen === 'week' ? <WeekScreen /> : <ChatScreen />}
+      {screen === 'day' ? <DayScreen /> : screen === 'week' ? <WeekScreen /> : <ChatScreen />}
       <View style={[styles.switch, { paddingBottom: Math.max(insets.bottom, 8) }]}>
-        {(['week', 'chat'] as const).map((s) => (
+        {(['day', 'week', 'chat'] as const).map((s) => (
           <Pressable
             key={s}
             onPress={() => setScreen(s)}
@@ -24,7 +27,7 @@ function Shell() {
             accessibilityRole="button"
             accessibilityState={{ selected: screen === s }}
           >
-            <Text style={[styles.tabText, screen === s && styles.tabTextOn]}>{s === 'week' ? 'Semaine' : 'Messages'}</Text>
+            <Text style={[styles.tabText, screen === s && styles.tabTextOn]}>{LABELS[s]}</Text>
           </Pressable>
         ))}
       </View>
