@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#faf6f2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#16110f" media="(prefers-color-scheme: dark)" />
+    <meta name="description" content="On se voit le vendredi 11 septembre a 18 h 04." />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Mimine à 18 h 04</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%8F%B3%3C/text%3E%3C/svg%3E" />
+
+    <style>
+      /* Jetons repris de src/styles/tokens.css — meme palette que le site. */
+      :root {
+        color-scheme: light;
+
+        --font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+        --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+        --bg: #faf6f2;
+        --bg-tint: #f3eae3;
+        --ink: #2e2226;
+        --ink-2: #6b5a60;
+        --ink-3: #9c8b90;
+        --line: rgba(58, 38, 44, 0.1);
+        --accent: #c4736e;
+        --accent-soft: #f6e3e0;
+        --plum: #7d5f77;
+        --gold: #c19a45;
+
+        --halo-a: rgba(196, 115, 110, 0.22);
+        --halo-b: rgba(125, 95, 119, 0.16);
+        --grain-opacity: 0.035;
+
+        --ease: cubic-bezier(0.32, 0.72, 0, 1);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme='light']) {
+          color-scheme: dark;
+          --bg: #16110f;
+          --bg-tint: #1e1715;
+          --ink: #f3e9e6;
+          --ink-2: #bfaba5;
+          --ink-3: #8b7973;
+          --line: rgba(255, 236, 230, 0.12);
+          --accent: #e0968e;
+          --accent-soft: #3a2523;
+          --plum: #bb96b3;
+          --gold: #dcb765;
+          --halo-a: rgba(224, 150, 142, 0.16);
+          --halo-b: rgba(187, 150, 179, 0.12);
+          --grain-opacity: 0.05;
+        }
+      }
+
+      :root[data-theme='dark'] {
+        color-scheme: dark;
+        --bg: #16110f;
+        --bg-tint: #1e1715;
+        --ink: #f3e9e6;
+        --ink-2: #bfaba5;
+        --ink-3: #8b7973;
+        --line: rgba(255, 236, 230, 0.12);
+        --accent: #e0968e;
+        --accent-soft: #3a2523;
+        --plum: #bb96b3;
+        --gold: #dcb765;
+        --halo-a: rgba(224, 150, 142, 0.16);
+        --halo-b: rgba(187, 150, 179, 0.12);
+        --grain-opacity: 0.05;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: clamp(24px, 6vw, 64px) clamp(20px, 5vw, 48px);
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--font-sans);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* Deux halos diffus + un grain tres leger : la meme atmosphere que l'accueil. */
+      .atmosphere {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background:
+          radial-gradient(52vw 40vw at 18% 12%, var(--halo-a), transparent 68%),
+          radial-gradient(46vw 38vw at 88% 88%, var(--halo-b), transparent 70%),
+          linear-gradient(180deg, transparent 40%, var(--bg-tint) 100%);
+      }
+      .atmosphere::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        opacity: var(--grain-opacity);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      }
+
+      main {
+        position: relative;
+        z-index: 1;
+        width: min(760px, 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: clamp(20px, 3.6vw, 34px);
+        text-align: center;
+      }
+
+      .eyebrow {
+        margin: 0;
+        font-size: 0.75rem;
+        font-weight: 500;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--accent);
+      }
+
+      h1 {
+        margin: 0;
+        font-family: var(--font-display);
+        font-optical-sizing: auto;
+        font-weight: 400;
+        font-size: clamp(2rem, 7vw, 3.4rem);
+        line-height: 1.08;
+        letter-spacing: -0.015em;
+        text-wrap: balance;
+      }
+      h1 em {
+        font-style: italic;
+        font-weight: 300;
+        color: var(--accent);
+      }
+
+      .when {
+        margin: 0;
+        font-size: clamp(0.9375rem, 2vw, 1.0625rem);
+        color: var(--ink-2);
+      }
+      .when b {
+        font-weight: 600;
+        color: var(--ink);
+        font-variant-numeric: tabular-nums;
+      }
+      .when span {
+        display: block;
+        margin-top: 6px;
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+      }
+
+      /* L'horloge : quatre colonnes separees par de simples filets, pas des cartes. */
+      .clock {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        width: 100%;
+        margin: clamp(2px, 1vw, 10px) 0;
+      }
+
+      .unit {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        padding: 0 clamp(4px, 1.4vw, 14px);
+      }
+      .unit + .unit { border-left: 1px solid var(--line); }
+
+      .value {
+        font-family: var(--font-display);
+        font-optical-sizing: auto;
+        font-weight: 300;
+        font-size: clamp(2.6rem, 11.5vw, 5.6rem);
+        line-height: 1;
+        letter-spacing: -0.03em;
+        font-variant-numeric: tabular-nums;
+        transition: opacity var(--dur, 240ms) var(--ease);
+      }
+      .unit--seconds .value { color: var(--accent); }
+
+      .label {
+        font-size: clamp(0.625rem, 1.6vw, 0.75rem);
+        font-weight: 500;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--ink-3);
+      }
+
+      /* Les memes secondes, dites autrement. */
+      .otherwise {
+        margin: 0;
+        max-width: 46ch;
+        font-size: 0.9375rem;
+        line-height: 1.7;
+        color: var(--ink-2);
+      }
+      .otherwise b {
+        font-weight: 500;
+        color: var(--ink);
+        font-variant-numeric: tabular-nums;
+      }
+
+      footer {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-top: clamp(8px, 2vw, 18px);
+        border-top: 1px solid var(--line);
+        font-size: 0.8125rem;
+        line-height: 1.6;
+        color: var(--ink-3);
+        text-wrap: balance;
+      }
+
+      .heart {
+        flex: none;
+        width: 14px;
+        height: 14px;
+        fill: var(--accent);
+        transform-origin: center;
+        animation: beat 1s var(--ease) infinite;
+      }
+      @keyframes beat {
+        0%, 62%, 100% { transform: scale(1); }
+        14% { transform: scale(1.26); }
+        30% { transform: scale(1.04); }
+        42% { transform: scale(1.16); }
+      }
+
+      /* Arrivee : la page se pose, elle ne surgit pas. */
+      main > * {
+        animation: rise 720ms var(--ease) both;
+      }
+      main > :nth-child(2) { animation-delay: 60ms; }
+      main > :nth-child(3) { animation-delay: 110ms; }
+      main > :nth-child(4) { animation-delay: 160ms; }
+      main > :nth-child(5) { animation-delay: 220ms; }
+      main > :nth-child(6) { animation-delay: 280ms; }
+      @keyframes rise {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: none; }
+      }
+
+      /* L'heure dite : ce qui remplace l'horloge une fois a zero. */
+      .arrived {
+        font-family: var(--font-display);
+        font-style: italic;
+        font-weight: 300;
+        font-size: clamp(2.4rem, 10vw, 4.6rem);
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        color: var(--accent);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.001ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.001ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="atmosphere" aria-hidden="true"></div>
+
+    <main>
+      <p class="eyebrow">rendez-vous</p>
+
+      <h1 id="title">On se voit, <em>mimine</em>.</h1>
+
+      <p class="when">
+        vendredi 11 septembre 2026 — <b>18 h 04</b>
+        <span>heure de Paris</span>
+      </p>
+
+      <section class="clock" id="clock" aria-hidden="true">
+        <div class="unit">
+          <div class="value" id="d">—</div>
+          <div class="label" id="dl">jours</div>
+        </div>
+        <div class="unit">
+          <div class="value" id="h">—</div>
+          <div class="label" id="hl">heures</div>
+        </div>
+        <div class="unit">
+          <div class="value" id="m">—</div>
+          <div class="label" id="ml">minutes</div>
+        </div>
+        <div class="unit unit--seconds">
+          <div class="value" id="s">—</div>
+          <div class="label" id="sl">secondes</div>
+        </div>
+      </section>
+
+      <p class="otherwise" id="otherwise">
+        Autrement dit : <b id="oh">—</b>, ou <b id="om">—</b>, ou encore
+        <b id="os">—</b> à faire passer.
+      </p>
+
+      <footer>
+        <svg class="heart" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 21s-8-4.9-8-10.4A4.6 4.6 0 0 1 12 7.2a4.6 4.6 0 0 1 8 3.4C20 16.1 12 21 12 21z" />
+        </svg>
+        <span>Sur Nous, un compteur tourne depuis le premier jour. Celui-ci tourne à l'envers.</span>
+      </footer>
+
+      <p class="sr-only" id="live" role="status" aria-live="polite"></p>
+    </main>
+
+    <script>
+      // Vendredi 11 septembre 2026, 18 h 04 a Paris (CEST, UTC+2) — fige en UTC
+      // pour que le decompte soit le meme depuis n'importe quel fuseau.
+      var TARGET = Date.UTC(2026, 8, 11, 16, 4, 0);
+
+      var el = {
+        d: document.getElementById('d'), dl: document.getElementById('dl'),
+        h: document.getElementById('h'), hl: document.getElementById('hl'),
+        m: document.getElementById('m'), ml: document.getElementById('ml'),
+        s: document.getElementById('s'), sl: document.getElementById('sl'),
+        oh: document.getElementById('oh'), om: document.getElementById('om'),
+        os: document.getElementById('os'),
+        clock: document.getElementById('clock'),
+        otherwise: document.getElementById('otherwise'),
+        title: document.getElementById('title'),
+        live: document.getElementById('live')
+      };
+
+      var nf = new Intl.NumberFormat('fr-FR');
+      function pad(n) { return n < 10 ? '0' + n : String(n); }
+      function plural(n, one, many) { return nf.format(n) + ' ' + (n === 1 ? one : many); }
+
+      var lastLive = '';
+      var arrived = false;
+
+      function render() {
+        var left = TARGET - Date.now();
+
+        if (left <= 0) {
+          if (!arrived) {
+            arrived = true;
+            el.clock.outerHTML = '<div class="arrived">18 h 04.</div>';
+            el.title.innerHTML = 'On y est, <em>mimine</em>.';
+            el.otherwise.textContent = "Le compte à rebours est fini. La suite ne se raconte pas ici.";
+            el.live.textContent = "Il est 18 h 04, le rendez-vous est arrivé.";
+          }
+          return;
+        }
+
+        var total = Math.floor(left / 1000);
+        var days = Math.floor(total / 86400);
+        var hours = Math.floor(total / 3600) % 24;
+        var mins = Math.floor(total / 60) % 60;
+        var secs = total % 60;
+
+        el.d.textContent = nf.format(days);
+        el.h.textContent = pad(hours);
+        el.m.textContent = pad(mins);
+        el.s.textContent = pad(secs);
+        el.dl.textContent = days === 1 ? 'jour' : 'jours';
+        el.hl.textContent = hours === 1 ? 'heure' : 'heures';
+        el.ml.textContent = mins === 1 ? 'minute' : 'minutes';
+        el.sl.textContent = secs === 1 ? 'seconde' : 'secondes';
+
+        el.oh.textContent = plural(Math.floor(total / 3600), 'heure', 'heures');
+        el.om.textContent = plural(Math.floor(total / 60), 'minute', 'minutes');
+        el.os.textContent = plural(total, 'seconde', 'secondes');
+
+        // Annonce a la minute : lire chaque seconde a voix haute serait insupportable.
+        var spoken = plural(days, 'jour', 'jours') + ', ' + plural(hours, 'heure', 'heures') +
+          ' et ' + plural(mins, 'minute', 'minutes') + ' avant 18 h 04.';
+        if (spoken !== lastLive) {
+          lastLive = spoken;
+          el.live.textContent = spoken;
+        }
+      }
+
+      render();
+      setInterval(render, 250);
+    </script>
+  </body>
+</html>
