@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useStore } from '../data/store'
-import { COLLECTIONS, DEFAULT_CRITERIA, type Criterion, type Person } from '../data/types'
+import { COLLECTIONS, DEFAULT_CRITERIA, type Criterion, type Person, type Rendezvous } from '../data/types'
 import { Icon } from '../components/ui/Icon'
 import { Avatar, Button, Chip, PageHeader, Segmented } from '../components/ui/primitives'
 import { useConfirm } from '../components/ui/Modal'
@@ -10,7 +10,7 @@ import { LocalAdapter } from '../data/adapters/local'
 import { storageEstimate } from '../data/idb'
 import { formatBytes } from '../data/media'
 import { downloadJSON, uid } from '../lib/utils'
-import { formatDate } from '../lib/date'
+import { formatDate, formatDayDate, formatTime } from '../lib/date'
 import Proposal from './Proposal'
 
 export default function SettingsPage() {
@@ -34,6 +34,14 @@ export default function SettingsPage() {
     void saveSettings({
       people: settings.people.map((p) => (p.id === id ? { ...p, ...patch } : p)),
     })
+
+  /* ----------------------------- Rendez-vous ----------------------------- */
+
+  const rdv = settings.rendezvous
+
+  /** Un seul rendez-vous a la fois : on modifie celui qui existe, ou on le cree. */
+  const setRendezvous = (patch: Partial<Rendezvous>) =>
+    void saveSettings({ rendezvous: { at: '', title: '', ...rdv, ...patch } })
 
   /* -------------------------------- Critères -------------------------------- */
 
@@ -260,6 +268,58 @@ export default function SettingsPage() {
           onChange={(v) => void saveSettings({ coverPhoto: v })}
           aspect="16 / 9"
         />
+      </section>
+
+      {/* ------------------------------- On se voit ------------------------------- */}
+      <section className="settings-section">
+        <h2>
+          <Icon name="calendar" size={17} /> On se voit
+        </h2>
+        <p className="settings-row__hint" style={{ marginTop: -6 }}>
+          La date de vos prochaines retrouvailles. Elle alimente le compte à rebours de la page
+          « On se voit » et l'encart de l'accueil — vous la voyez tous les deux, sur tous vos
+          appareils.
+        </p>
+
+        <div className="form-grid">
+          <Field
+            label="On se voit le"
+            hint={rdv?.at ? `Soit ${formatDayDate(rdv.at)} à ${formatTime(rdv.at)}` : 'Date et heure.'}
+          >
+            <DateInput
+              type="datetime-local"
+              value={rdv?.at ?? ''}
+              onChange={(v) => setRendezvous({ at: v })}
+            />
+          </Field>
+          <Field label="Où" hint="Facultatif.">
+            <Input
+              value={rdv?.place ?? ''}
+              onChange={(v) => setRendezvous({ place: v })}
+              placeholder="Gare de Lyon"
+            />
+          </Field>
+          <Field label="La phrase affichée en grand" span2>
+            <Input
+              value={rdv?.title ?? ''}
+              onChange={(v) => setRendezvous({ title: v })}
+              placeholder="On se voit, mimine."
+            />
+          </Field>
+        </div>
+
+        {rdv && (
+          <div className="row wrap" style={{ gap: 8 }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              icon="trash"
+              onClick={() => void saveSettings({ rendezvous: undefined })}
+            >
+              Retirer le rendez-vous
+            </Button>
+          </div>
+        )}
       </section>
 
       {/* -------------------------------- Apparence -------------------------------- */}

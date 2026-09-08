@@ -5,7 +5,17 @@ import { useCollection, useStore } from '../data/store'
 import { Icon } from '../components/ui/Icon'
 import { Button, Chip, Stat } from '../components/ui/primitives'
 import { Img, useLightbox } from '../components/ui/Img'
-import { elapsedSince, formatDate, formatDateShort, nextAnniversary, nextMilestoneDays, pad2 } from '../lib/date'
+import {
+  countdown,
+  elapsedSince,
+  formatDate,
+  formatDateShort,
+  formatDayDate,
+  formatTime,
+  nextAnniversary,
+  nextMilestoneDays,
+  pad2,
+} from '../lib/date'
 import { sortBy } from '../lib/utils'
 import { SettingsModal } from '../components/SettingsModal'
 
@@ -26,6 +36,11 @@ export default function Home() {
   const milestone = nextMilestoneDays(elapsed.totalDays)
 
   const [nameA, nameB] = settings.people.map((p) => p.name)
+
+  // Les retrouvailles passent devant l'anniversaire : c'est la date la
+  // plus proche, et celle qu'on vient vérifier plusieurs fois par jour.
+  const rdv = settings.rendezvous
+  const rdvLeft = rdv?.at ? countdown(rdv.at, tick) : null
 
   /* ------------------------------ Derniers contenus ------------------------------ */
 
@@ -245,6 +260,45 @@ export default function Home() {
         </div>
 
         <div className="stack" style={{ gap: 'var(--sp-5)' }}>
+          {/* On se voit */}
+          {rdv && rdvLeft && (
+            <Link
+              to="/rendez-vous"
+              className="upnext"
+              style={{ background: 'linear-gradient(120deg, var(--accent-soft), var(--plum-soft))' }}
+            >
+              {!rdvLeft.done && (
+                <div style={{ textAlign: 'center' }}>
+                  <div className="upnext__num">
+                    {rdvLeft.days > 0 ? rdvLeft.days : rdvLeft.hours}
+                  </div>
+                  <div style={{ fontSize: 'var(--t-xs)', color: 'var(--ink-3)' }}>
+                    {rdvLeft.days > 0
+                      ? rdvLeft.days > 1
+                        ? 'jours'
+                        : 'jour'
+                      : rdvLeft.hours > 1
+                        ? 'heures'
+                        : 'heure'}
+                  </div>
+                </div>
+              )}
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 'var(--t-sm)' }}>
+                  {rdvLeft.done ? 'On y est 🤍' : rdv.title.trim() || 'On se voit'}
+                </div>
+                <div style={{ fontSize: 'var(--t-xs)', color: 'var(--ink-2)' }}>
+                  {formatDayDate(rdv.at)} à {formatTime(rdv.at)}
+                </div>
+                {rdv.place && (
+                  <div style={{ fontSize: 'var(--t-xs)', color: 'var(--ink-3)', marginTop: 4 }}>
+                    {rdv.place}
+                  </div>
+                )}
+              </div>
+            </Link>
+          )}
+
           {/* Prochaine date */}
           {anniversary && (
             <div className="upnext">

@@ -23,6 +23,7 @@ const SECTIONS: { title: string; items: NavEntry[] }[] = [
     title: 'Nous',
     items: [
       { to: '/', label: 'Accueil', short: 'Accueil', icon: 'home' },
+      { to: '/rendez-vous', label: 'On se voit', short: 'Rendez-vous', icon: 'calendar' },
       { to: '/aventures', label: 'Nos aventures', short: 'Aventures', icon: 'book', count: 'adventures' },
       { to: '/mots', label: 'Nos mots', short: 'Mots', icon: 'quote', count: 'words' },
     ],

@@ -51,6 +51,9 @@ export interface Settings extends BaseItem {
   /** Dates marquantes affichees sur l'accueil */
   milestones: { id: string; label: string; date: string }[]
 
+  /** Les prochaines retrouvailles, decomptees sur la page « On se voit ». */
+  rendezvous?: Rendezvous
+
   /** Identifiant du compte qui a configure le site (celui qui offre). */
   setupBy?: string
   /** Trace de la demande posee a la premiere connexion de l'autre. */
@@ -64,6 +67,19 @@ export interface Settings extends BaseItem {
 }
 
 export type PaletteName = 'automne' | 'bleu'
+
+/**
+ * Le prochain rendez-vous. Une seule date a la fois : c'est un compte a
+ * rebours, pas un agenda — la remplacer fait repartir le decompte.
+ */
+export interface Rendezvous {
+  /** Date et heure locales, format YYYY-MM-DDTHH:mm */
+  at: string
+  /** La phrase affichee en grand. */
+  title: string
+  /** Ou l'on se retrouve. Facultatif. */
+  place?: string
+}
 
 /* ------------------------------ Collections ------------------------------ */
 

@@ -5,6 +5,10 @@ const MOIS = [
   'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
 ]
 
+const JOURS = [
+  'dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi',
+]
+
 export const toDate = (value: string | Date | undefined | null): Date | null => {
   if (!value) return null
   const d = value instanceof Date ? value : new Date(value.length === 10 ? `${value}T12:00:00` : value)
@@ -33,6 +37,20 @@ export const formatMonthYear = (value?: string | Date | null): string => {
   const d = toDate(value)
   if (!d) return ''
   return `${MOIS[d.getMonth()]} ${d.getFullYear()}`
+}
+
+/** "mardi 12 mars 2024" */
+export const formatDayDate = (value?: string | Date | null): string => {
+  const d = toDate(value)
+  if (!d) return ''
+  return `${JOURS[d.getDay()]} ${formatDate(d)}`
+}
+
+/** "18 h 04" — l'heure telle qu'on la dit, pas telle qu'on la tape. */
+export const formatTime = (value?: string | Date | null): string => {
+  const d = toDate(value)
+  if (!d) return ''
+  return `${d.getHours()} h ${pad2(d.getMinutes())}`
 }
 
 /** "12 mars 2024 à 18h30" */

@@ -10,6 +10,7 @@ import { Icon } from './components/ui/Icon'
 // Chaque page arrive à la demande : la carte n'embarque Leaflet que
 // lorsqu'on l'ouvre vraiment. Ça compte sur un téléphone en 4G.
 import Home from './pages/Home'
+const Rendezvous = lazy(() => import('./pages/Rendezvous'))
 const Journal = lazy(() => import('./pages/Journal'))
 const Words = lazy(() => import('./pages/Words'))
 const Stays = lazy(() => import('./pages/Stays'))
@@ -182,6 +183,7 @@ export default function App() {
           <Routes>
             <Route element={<Layout />}>
               <Route index element={<Home />} />
+              <Route path="/rendez-vous" element={<Rendezvous />} />
               <Route path="/aventures" element={<Journal />} />
               <Route path="/mots" element={<Words />} />
               <Route path="/logements" element={<Stays />} />

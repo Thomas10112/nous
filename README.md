@@ -1,7 +1,8 @@
 # Nous
 
 Un site privé, à deux. Journal, carte, classement d'Airbnb, capsules temporelles,
-moodboard collaboratif — et un compteur qui tourne depuis le premier jour.
+moodboard collaboratif — un compteur qui tourne depuis le premier jour, et un
+autre qui tourne à l'envers jusqu'aux prochaines retrouvailles.
 
 Il fonctionne tout de suite, sans compte ni serveur. Et quand vous voulez pouvoir
 écrire **tous les deux, depuis vos PC et vos téléphones**, une petite configuration
@@ -44,6 +45,7 @@ lancez `npm run dev:lan`, puis rendez-vous sur `http://<ip-de-votre-pc>:5173`.
 | | |
 | --- | --- |
 | **Accueil** | Votre photo, vos prénoms, votre phrase, et le compteur (années, mois, jours, et le total). Le crayon en haut à droite ouvre la personnalisation. |
+| **On se voit** | Le compte à rebours jusqu'aux prochaines retrouvailles : jours, heures, minutes, secondes. La date, le lieu et la phrase affichée se règlent dans **Réglages**, et l'accueil en garde un rappel. |
 | **Nos aventures** | Une frise par année. Date, lieu, photos, description, étiquettes, note sur 5. |
 | **Nos mots** | Vos phrases mignonnes et vos private jokes, classées par type et par personne. Celles en « coup de cœur » remontent sur l'accueil, une différente chaque jour. |
 | **Nos Airbnb** | Notez chaque logement sur des critères pondérés — le classement se recalcule seul. Les critères se modifient dans Réglages. |
