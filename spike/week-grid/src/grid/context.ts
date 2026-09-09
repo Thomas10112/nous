@@ -21,8 +21,23 @@ export interface GridShared {
   viewportHeight: SharedValue<number>
   /** vitesse d'auto-défilement demandée par un bloc en cours de drag (px/frame) */
   autoScroll: SharedValue<number>
-  /** un geste de drag/resize est en cours (mesure de frames, verrou du pager) */
+  /**
+   * Un bloc est en cours de déplacement, de redimensionnement ou de création.
+   * Le pager et le pincement s'effacent devant lui, et l'auto-défilement tourne.
+   */
   dragActive: SharedValue<number>
+  /**
+   * N'IMPORTE quel geste est en cours — y compris ceux qui ne touchent pas un
+   * bloc : pager, pincement, défilement natif. C'est lui, et non `dragActive`,
+   * qui arme le compteur d'images : autrement le compteur affiche « 0/0 » après
+   * un balayage, ce qui se lit « aucune image longue » alors que cela veut dire
+   * « rien n'a été mesuré ». Le critère de la phase 1 en dépend.
+   */
+  gestureActive: SharedValue<number>
+  /** 1 = la nuit est repliée en deux bandes (parti pris n°5 du design system) */
+  nightFolded: SharedValue<number>
+  /** hauteur d'une bande de nuit, en px */
+  bandH: SharedValue<number>
   /** jour en colonne focus (portrait) */
   focusDay: SharedValue<number>
   /**

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native'
+import { Dimensions, Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, {
   runOnJS,
@@ -12,16 +12,27 @@ import Animated, {
 } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { DAY_LABELS, demoWeek, type DemoEvent } from '../data/demo'
+import { dateOf, isToday, monthLabel, todayIndex } from '../domain/dates'
 import { DAYS_PER_WEEK, SLOTS_PER_DAY, clamp, type SlotWindow } from '../domain/time'
 import { GridActionsContext, GridSharedContext, type GridShared } from '../grid/context'
 import { DayColumn, useColumnStyle } from '../components/DayColumn'
 import { FrameMeter } from '../components/FrameMeter'
-import { GUTTER_W, SLOT_BASE_H, ZOOM_MAX, ZOOM_MIN, colors, fonts, springs } from '../theme'
+import { Heart } from '../components/Heart'
+import { BAND_H, GUTTER_W, SLOT_BASE_H, ZOOM_MAX, ZOOM_MIN, colors, fonts } from '../theme'
 
 const HOURS = Array.from({ length: 24 }, (_, h) => h)
-const TODAY_INDEX = ((new Date().getDay() + 6) % 7) // lundi = 0
+const TODAY_INDEX = todayIndex() // lundi = 0
+const FIRST_W = Dimensions.get('window').width - GUTTER_W - 16
 
-function DayHeader({ day, focused, isToday, onPress }: { day: number; focused: boolean; isToday: boolean; onPress: () => void }) {
+/** « cette semaine », jamais « semaine +0 » : le débogage ne s'affiche pas. */
+function weekLabel(offset: number): string {
+  if (offset === 0) return 'cette semaine'
+  if (offset === 1) return 'la semaine prochaine'
+  if (offset === -1) return 'la semaine dernière'
+  return offset > 0 ? `dans ${offset} semaines` : `il y a ${-offset} semaines`
+}
+
+function DayHeader({ day, focused, date, today, onPress }: { day: number; focused: boolean; date: Date; today: boolean; onPress: () => void }) {
   const widthStyle = useColumnStyle(day)
   return (
     <Animated.View style={[styles.headerCell, widthStyle]}>
@@ -29,8 +40,8 @@ function DayHeader({ day, focused, isToday, onPress }: { day: number; focused: b
         <Text style={[styles.headerDay, focused && styles.headerDayFocus]} numberOfLines={1}>
           {focused ? DAY_LABELS[day] : DAY_LABELS[day]!.slice(0, 1)}
         </Text>
-        <Text style={[styles.headerNum, focused && styles.headerNumFocus]}>{8 + day}</Text>
-        {isToday && <Text style={styles.heart}>♥</Text>}
+        <Text style={[styles.headerNum, focused && styles.headerNumFocus]}>{date.getDate()}</Text>
+        {today && <View style={styles.heart}><Heart size={9} color={colors.accent} /></View>}
       </Pressable>
     </Animated.View>
   )
@@ -62,6 +73,10 @@ export function WeekScreen() {
   const focusW = useSharedValue(0)
   const narrowW = useSharedValue(0)
   const lockDay = useSharedValue(0)
+  const gestureActive = useSharedValue(0)
+  // la Semaine ne replie pas la nuit : l'échelle y reste linéaire
+  const nightFolded = useSharedValue(0)
+  const bandH = useSharedValue(BAND_H)
   const pinchBase = useSharedValue(SLOT_BASE_H)
   const pinchFocalY = useSharedValue(0)
   const pinchScroll = useSharedValue(0)
@@ -91,8 +106,8 @@ export function WeekScreen() {
   }, [gridWidth, focusDayState, colLefts, colWidths, focusDay, focusW, narrowW])
 
   const shared = useMemo<GridShared>(
-    () => ({ slotH, scrollY, colLefts, colWidths, gridPageX, viewportTop, viewportHeight, autoScroll, dragActive, focusDay, focusW, narrowW, lockDay }),
-    [slotH, scrollY, colLefts, colWidths, gridPageX, viewportTop, viewportHeight, autoScroll, dragActive, focusDay, focusW, narrowW, lockDay],
+    () => ({ slotH, scrollY, colLefts, colWidths, gridPageX, viewportTop, viewportHeight, autoScroll, dragActive, gestureActive, nightFolded, bandH, focusDay, focusW, narrowW, lockDay }),
+    [slotH, scrollY, colLefts, colWidths, gridPageX, viewportTop, viewportHeight, autoScroll, dragActive, gestureActive, nightFolded, bandH, focusDay, focusW, narrowW, lockDay],
   )
 
   const onCommit = useCallback((id: string, window: SlotWindow) => {
@@ -120,6 +135,11 @@ export function WeekScreen() {
     onScroll: (e) => {
       scrollY.value = e.contentOffset.y
     },
+    onBeginDrag: () => { gestureActive.value = 1 },
+    onEndDrag: (e) => {
+      if (dragActive.value === 0 && Math.abs(e.velocity?.y ?? 0) < 0.1) gestureActive.value = 0
+    },
+    onMomentumEnd: () => { if (dragActive.value === 0) gestureActive.value = 0 },
   })
 
   // auto-défilement pendant un drag près des bords
@@ -138,6 +158,7 @@ export function WeekScreen() {
       pinchBase.value = slotH.value
       pinchFocalY.value = e.focalY
       pinchScroll.value = scrollY.value
+      gestureActive.value = 1
     })
     .onUpdate((e) => {
       if (dragActive.value === 1) return
@@ -152,11 +173,13 @@ export function WeekScreen() {
     .maxPointers(1)
     .activeOffsetX([-24, 24])
     .failOffsetY([-16, 16])
+    .onStart(() => { gestureActive.value = 1 })
     .onEnd((e) => {
       if (dragActive.value === 1) return
       if (e.translationX < -60) runOnJS(shiftWeek)(1)
       else if (e.translationX > 60) runOnJS(shiftWeek)(-1)
     })
+    .onFinalize(() => { if (dragActive.value === 0) gestureActive.value = 0 })
   const gridGesture = Gesture.Race(weekPan, Gesture.Simultaneous(native, pinch))
 
   const gridRef = useRef<View>(null)
@@ -186,9 +209,9 @@ export function WeekScreen() {
       <GridActionsContext.Provider value={actions}>
         <View style={[styles.screen, { paddingTop: insets.top }]}>
           <View style={styles.titleRow}>
-            <Text style={styles.title}>septembre 2026</Text>
+            <Text style={styles.title}>{monthLabel(dateOf(weekOffset, 0))}</Text>
             <View style={styles.titleRight}>
-              <Text style={styles.weekLabel}>semaine {weekOffset >= 0 ? `+${weekOffset}` : weekOffset}</Text>
+              <Text style={styles.weekLabel}>{weekLabel(weekOffset)}</Text>
               <FrameMeter />
             </View>
           </View>
@@ -200,7 +223,8 @@ export function WeekScreen() {
                 key={day}
                 day={day}
                 focused={focusDayState === day}
-                isToday={day === TODAY_INDEX && weekOffset === 0}
+                date={dateOf(weekOffset, day)}
+                today={isToday(dateOf(weekOffset, day))}
                 onPress={() => setFocusDayState(day)}
               />
             ))}
@@ -236,7 +260,7 @@ export function WeekScreen() {
                     ))}
                     {weekOffset === 0 && (
                       <View pointerEvents="none" style={[styles.nowLine, { top: `${nowPct}%` }]}>
-                        <Text style={styles.nowHeart}>♥</Text>
+                        <View style={styles.nowHeart}><Heart size={11} color={colors.accent} /></View>
                       </View>
                     )}
                   </View>
@@ -275,7 +299,7 @@ const styles = StyleSheet.create({
   headerDayFocus: { color: colors.ink, fontWeight: '600' },
   headerNum: { fontFamily: fonts.display, fontSize: 17, color: colors.ink2, fontVariant: ['tabular-nums'] },
   headerNumFocus: { color: colors.ink, fontSize: 20 },
-  heart: { color: colors.accent, fontSize: 9, marginTop: -2 },
+  heart: { marginTop: 1 },
   grid: { flex: 1, paddingHorizontal: 8 },
   content: { flexDirection: 'row' },
   gutter: { width: GUTTER_W },
@@ -290,5 +314,5 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: colors.accent,
   },
-  nowHeart: { position: 'absolute', left: 6, top: -9, color: colors.accent, fontSize: 12 },
+  nowHeart: { position: 'absolute', left: 6, top: -6 },
 })

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, {
@@ -10,8 +10,19 @@ import Animated, {
 } from 'react-native-reanimated'
 import * as Haptics from 'expo-haptics'
 import type { DemoEvent } from '../data/demo'
-import { SLOTS_PER_DAY, clamp, dayAt, formatRange, moveWindow, resizeEnd, resizeStart } from '../domain/time'
-import type { SlotWindow } from '../domain/time'
+import {
+  SLOTS_PER_DAY,
+  clamp,
+  dayAt,
+  formatRange,
+  moveWindow,
+  resizeEnd,
+  resizeStart,
+  slotToY,
+  yToSlot,
+  type DayScale,
+  type SlotWindow,
+} from '../domain/time'
 import { useGridActions, useGridShared } from '../grid/context'
 import { EDGE_AUTOSCROLL, HIT_MIN, LONG_PRESS_MS, colors, fonts, radius, springs, tint } from '../theme'
 
@@ -28,14 +39,23 @@ const hapticSelect = () => void Haptics.selectionAsync()
 const hapticLift = () => void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
 const hapticDone = () => void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
 
+/** Marges d'une carte dans sa voie, et décalage des cartes « posées ». */
+const INSET = 4
+const NESTED_STEP = 10
+
 /**
  * Un bloc de la grille : carte « posée » (05 §4.0), saisie par long-press,
  * déplacée sur le thread UI, accrochée au créneau, poignées quand sélectionné.
+ *
+ * Toutes les conversions créneau ↔ pixel passent par `slotToY` / `yToSlot` :
+ * avec la nuit repliée l'échelle n'est plus linéaire, et un calcul en
+ * `slot * hauteur` afficherait une fausse heure.
  */
 export function EventBlock({ event, selected, column, columns, nested }: Props) {
   const grid = useGridShared()
   const actions = useGridActions()
   const { window } = event
+  const length = window.endSlot - window.startSlot
 
   // état du geste, thread UI
   const lifted = useSharedValue(0)
@@ -46,11 +66,30 @@ export function EventBlock({ event, selected, column, columns, nested }: Props) 
   const resizeDelta = useSharedValue(0)
   const resizing = useSharedValue<0 | 1 | 2>(0) // 1 = début, 2 = fin
 
-  /** créneaux de déplacement dérivés du doigt ET du défilement (auto-scroll) */
+  /** L'échelle courante, telle que la voit le thread UI. */
+  const scale = (): DayScale => {
+    'worklet'
+    return { slotH: grid.slotH.value, bandH: grid.bandH.value, folded: grid.nightFolded.value === 1 }
+  }
+
+  /**
+   * Déplacement en créneaux. On convertit une POSITION absolue plutôt que
+   * d'appliquer un ratio au déplacement du doigt : sous une échelle repliée,
+   * un même nombre de pixels ne vaut pas le même nombre de créneaux selon
+   * qu'on est dans la journée ou dans la bande de nuit.
+   */
   const dragSlots = useDerivedValue(() => {
     if (lifted.value === 0) return 0
-    return Math.round((fingerDY.value + grid.scrollY.value - scrollAtStart.value) / grid.slotH.value)
+    const s = scale()
+    const dy = fingerDY.value + grid.scrollY.value - scrollAtStart.value
+    const cible = clamp(
+      Math.round(yToSlot(slotToY(window.startSlot, s) + dy, s)),
+      0,
+      SLOTS_PER_DAY - length,
+    )
+    return cible - window.startSlot
   })
+
   const dragDay = useDerivedValue(() => {
     if (lifted.value === 0 || grid.lockDay.value === 1) return window.day
     const x = grid.colLefts.value[window.day]! + grid.colWidths.value[window.day]! / 2 + fingerDX.value
@@ -58,8 +97,7 @@ export function EventBlock({ event, selected, column, columns, nested }: Props) 
   })
 
   const commitMove = (deltaSlots: number, deltaDays: number) => {
-    const next = moveWindow(window, deltaSlots, deltaDays)
-    actions.onCommit(event.id, next)
+    actions.onCommit(event.id, moveWindow(window, deltaSlots, deltaDays))
     hapticDone()
   }
   const commitResize = (which: 1 | 2, delta: number) => {
@@ -69,12 +107,29 @@ export function EventBlock({ event, selected, column, columns, nested }: Props) 
   }
   const select = () => actions.onSelect(event.id)
 
+  /**
+   * Démontage en plein geste — changer de jour pendant un glissé remonte toute
+   * la colonne. Gesture Handler supprime alors le handler natif sans délivrer
+   * d'état terminal : `onFinalize` n'est jamais appelé, et sans ce nettoyage
+   * les verrous resteraient armés jusqu'au redémarrage (grille qui défile
+   * seule, pager et pincement morts).
+   */
+  useEffect(
+    () => () => {
+      grid.dragActive.value = 0
+      grid.gestureActive.value = 0
+      grid.autoScroll.value = 0
+    },
+    [grid],
+  )
+
   const drag = Gesture.Pan()
     .maxPointers(1)
     .activateAfterLongPress(LONG_PRESS_MS)
     .onStart(() => {
       lifted.value = 1
       grid.dragActive.value = 1
+      grid.gestureActive.value = 1
       fingerDX.value = 0
       fingerDY.value = 0
       scrollAtStart.value = grid.scrollY.value
@@ -105,6 +160,7 @@ export function EventBlock({ event, selected, column, columns, nested }: Props) 
       const deltaDays = dragDay.value - window.day
       grid.autoScroll.value = 0
       grid.dragActive.value = 0
+      grid.gestureActive.value = 0
       lifted.value = 0
       fingerDX.value = 0
       fingerDY.value = 0
@@ -122,13 +178,16 @@ export function EventBlock({ event, selected, column, columns, nested }: Props) 
       .onStart(() => {
         resizing.value = which
         grid.dragActive.value = 1
+        grid.gestureActive.value = 1
         resizeDelta.value = 0
         lastSnap.value = 0
         runOnJS(hapticLift)()
       })
       .onUpdate((e) => {
-        const raw = Math.round(e.translationY / grid.slotH.value)
-        const length = window.endSlot - window.startSlot
+        const s = scale()
+        const bord = which === 1 ? window.startSlot : window.endSlot
+        // même raison que pour le déplacement : on convertit une position
+        const raw = Math.round(yToSlot(slotToY(bord, s) + e.translationY, s)) - bord
         resizeDelta.value =
           which === 1
             ? clamp(raw, -window.startSlot, length - 1)
@@ -142,6 +201,7 @@ export function EventBlock({ event, selected, column, columns, nested }: Props) 
         const delta = resizeDelta.value
         resizing.value = 0
         grid.dragActive.value = 0
+        grid.gestureActive.value = 0
         resizeDelta.value = 0
         if (delta !== 0) runOnJS(commitResize)(which, delta)
       })
@@ -149,22 +209,34 @@ export function EventBlock({ event, selected, column, columns, nested }: Props) 
   const topHandle = useMemo(() => handleGesture(1), [window.startSlot, window.endSlot])
   const bottomHandle = useMemo(() => handleGesture(2), [window.startSlot, window.endSlot])
 
-  const length = window.endSlot - window.startSlot
-
   const style = useAnimatedStyle(() => {
-    const slotH = grid.slotH.value
+    const s = scale()
     const startDelta = resizing.value === 1 ? resizeDelta.value : 0
     const endDelta = resizing.value === 2 ? resizeDelta.value : 0
-    const top = (window.startSlot + startDelta) * slotH + (lifted.value ? dragSlots.value * slotH : 0)
-    const height = Math.max(slotH, (length - startDelta + endDelta) * slotH)
+    const glisse = lifted.value ? dragSlots.value : 0
+    const top = slotToY(window.startSlot + startDelta + glisse, s)
+    const bas = slotToY(window.endSlot + endDelta + glisse, s)
     const day = dragDay.value
+
+    // La largeur est TOUJOURS renvoyée, même au repos. Reanimated ne
+    // réinitialise pas une propriété qui disparaît d'un style animé : une
+    // carte en demi-colonne soulevée une fois gardait la pleine largeur
+    // définitivement.
+    const colW = grid.colWidths.value[day] ?? 0
+    const voie = colW / columns
+    const left = (lifted.value ? 0 : column * voie) + INSET + nested * NESTED_STEP
+    const width = Math.max(8, (lifted.value ? colW : voie) - 2 * INSET - nested * NESTED_STEP)
     const dx = lifted.value ? grid.colLefts.value[day]! - grid.colLefts.value[window.day]! : 0
-    const width = lifted.value ? grid.colWidths.value[day]! : undefined
+
     return {
       top,
-      height,
+      // Minimum de 2 px, pas d'un créneau : dans la nuit repliée une carte ne
+      // vaut que quelques pixels, et la forcer à la hauteur d'un créneau la
+      // ferait dépasser de la bande, au beau milieu de la journée.
+      height: Math.max(2, bas - top),
+      left,
+      width,
       transform: [{ translateX: dx }, { scale: withSpring(lifted.value ? 1.02 : 1, springs.firm) }],
-      ...(width !== undefined ? { width: width - 8 } : {}),
       shadowOpacity: withSpring(lifted.value ? 0.18 : 0.06, springs.firm),
       elevation: lifted.value ? 8 : 1,
       zIndex: lifted.value || selected ? 20 : 1 + nested,
@@ -182,8 +254,6 @@ export function EventBlock({ event, selected, column, columns, nested }: Props) 
         ? colors.plumSoft
         : tint(event.personColor ?? colors.sky)
 
-  const lane = columns > 1 ? { left: `${(column / columns) * 100}%` as const, width: `${100 / columns}%` as const } : null
-
   return (
     <GestureDetector gesture={Gesture.Race(drag, tap)}>
       <Animated.View
@@ -191,16 +261,13 @@ export function EventBlock({ event, selected, column, columns, nested }: Props) 
         accessibilityLabel={`${event.title}, ${formatRange(window)}`}
         style={[
           styles.block,
-          { backgroundColor: bg, marginLeft: nested * 6, marginTop: nested * 6 },
-          lane,
+          { backgroundColor: bg },
           event.kind === 'proposed' && styles.proposed,
           selected && styles.selected,
           style,
         ]}
       >
-        {selected && (
-          <Animated.Text style={styles.range}>{formatRange(window)}</Animated.Text>
-        )}
+        {selected && <Animated.Text style={styles.range}>{formatRange(window)}</Animated.Text>}
         <Text
           numberOfLines={1}
           style={[
@@ -209,7 +276,6 @@ export function EventBlock({ event, selected, column, columns, nested }: Props) 
             event.kind === 'proposed' && { color: colors.plumInk },
           ]}
         >
-          {event.kind === 'nous' ? '♥ ' : ''}
           {event.title}
         </Text>
         <Animated.Text numberOfLines={1} style={[styles.meta, metaStyle]}>
@@ -237,8 +303,6 @@ export function EventBlock({ event, selected, column, columns, nested }: Props) 
 const styles = StyleSheet.create({
   block: {
     position: 'absolute',
-    left: 4,
-    right: 4,
     borderRadius: radius.sm,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -247,16 +311,8 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     overflow: 'visible',
   },
-  proposed: {
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: colors.plum,
-  },
-  selected: {
-    borderWidth: 1.5,
-    borderColor: colors.accent,
-    minHeight: HIT_MIN,
-  },
+  proposed: { borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.plum },
+  selected: { borderWidth: 1.5, borderColor: colors.accent, minHeight: HIT_MIN },
   title: { fontSize: 12.5, color: colors.ink },
   titlePerso: { fontFamily: fonts.sans, fontWeight: '600' },
   titleNous: { fontFamily: fonts.display, fontWeight: '500', fontSize: 13.5 },

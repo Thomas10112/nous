@@ -3,6 +3,7 @@ import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, 
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { DEMO_MESSAGES, type DemoMessage } from '../data/demo'
 import { colors, fonts, radius } from '../theme'
+import { Heart } from '../components/Heart'
 
 /**
  * Messagerie factice : sert uniquement à juger le clavier (pas de saut,
@@ -57,7 +58,7 @@ export function ChatScreen() {
           onSubmitEditing={send}
         />
         <Pressable onPress={send} style={styles.send} accessibilityRole="button" accessibilityLabel="Envoyer">
-          <Text style={styles.sendText}>♥</Text>
+          <Heart size={17} color={colors.inkOnAccent} />
         </Pressable>
       </View>
     </KeyboardAvoidingView>
@@ -102,5 +103,4 @@ const styles = StyleSheet.create({
     color: colors.ink,
   },
   send: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center' },
-  sendText: { color: colors.inkOnAccent, fontSize: 18 },
 })

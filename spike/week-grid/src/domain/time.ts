@@ -77,3 +77,70 @@ export function dayAt(x: number, lefts: number[], widths: number[]): number {
   }
   return 0
 }
+
+/* ------------------------------------------------------------------
+   La nuit repliée.
+
+   Parti pris n°5 du design system : « 7 h → 23 h par défaut, la nuit repliée
+   en une bande dépliable ». Une journée ouverte sur dix heures de vide est une
+   journée qu'on referme.
+
+   L'échelle n'est donc plus linéaire : les créneaux de la journée gardent leur
+   hauteur, ceux de la nuit se compriment dans une bande de hauteur fixe. Tout
+   ce qui convertit un créneau en pixels — un bloc, la gouttière, la ligne
+   « maintenant », un glissé — doit passer par ici, sous peine d'afficher une
+   fausse heure.
+   ------------------------------------------------------------------ */
+
+/** 7 h : fin de la bande du matin, début de la journée montrée. */
+export const NIGHT_END = 14
+/** 23 h : début de la bande du soir. */
+export const NIGHT_START = 46
+
+export interface DayScale {
+  /** hauteur d'un créneau de 30 min dans la plage montrée */
+  slotH: number
+  /** hauteur d'une bande de nuit repliée */
+  bandH: number
+  /** false = les 24 heures à l'échelle, l'échelle redevient linéaire */
+  folded: boolean
+}
+
+/** Ordonnée du haut d'un créneau. */
+export function slotToY(slot: number, s: DayScale): number {
+  'worklet'
+  if (!s.folded) return slot * s.slotH
+  if (slot <= NIGHT_END) return (slot / NIGHT_END) * s.bandH
+  const dayBottom = s.bandH + (NIGHT_START - NIGHT_END) * s.slotH
+  if (slot <= NIGHT_START) return s.bandH + (slot - NIGHT_END) * s.slotH
+  return dayBottom + ((slot - NIGHT_START) / (SLOTS_PER_DAY - NIGHT_START)) * s.bandH
+}
+
+/** Créneau (fractionnaire) à une ordonnée — l'inverse exact de `slotToY`. */
+export function yToSlot(y: number, s: DayScale): number {
+  'worklet'
+  if (!s.folded) return y / s.slotH
+  const dayTop = s.bandH
+  const dayBottom = s.bandH + (NIGHT_START - NIGHT_END) * s.slotH
+  if (y <= dayTop) return (y / s.bandH) * NIGHT_END
+  if (y >= dayBottom) return NIGHT_START + ((y - dayBottom) / s.bandH) * (SLOTS_PER_DAY - NIGHT_START)
+  return NIGHT_END + (y - dayTop) / s.slotH
+}
+
+/** Hauteur totale du canevas d'une journée. */
+export function dayHeight(s: DayScale): number {
+  'worklet'
+  return s.folded ? 2 * s.bandH + (NIGHT_START - NIGHT_END) * s.slotH : SLOTS_PER_DAY * s.slotH
+}
+
+/** Créneau le plus proche d'une ordonnée, échelle comprise. */
+export function snapSlotAt(y: number, s: DayScale): number {
+  'worklet'
+  return clamp(Math.round(yToSlot(y, s)), 0, SLOTS_PER_DAY)
+}
+
+/** Créneau contenant l'ordonnée, échelle comprise. */
+export function slotAtY(y: number, s: DayScale): number {
+  'worklet'
+  return clamp(Math.floor(yToSlot(y, s)), 0, SLOTS_PER_DAY - 1)
+}

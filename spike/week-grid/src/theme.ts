@@ -53,6 +53,8 @@ export const ZOOM_MAX = 1.6
 export const HIT_MIN = 44
 export const EDGE_AUTOSCROLL = 56
 export const LONG_PRESS_MS = 350
+/** Hauteur d'une bande de nuit repliée (parti pris n°5 du design system). */
+export const BAND_H = 28
 
 /** Teinte à ~14 % d'une couleur hex sur papier. */
 export function tint(hex: string, alpha = 0.14): string {

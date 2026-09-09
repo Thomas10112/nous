@@ -6,6 +6,7 @@ import { DAYS_PER_WEEK, clamp } from '../domain/time'
 import { DAY_END, DAY_START, inkWeight } from '../domain/phrase'
 import { dateOf, isToday } from '../domain/dates'
 import { colors, fonts } from '../theme'
+import { Heart } from './Heart'
 
 const CUT_W = 13
 const CUT_H = 44
@@ -56,9 +57,7 @@ function Cut({ events }: { events: readonly DemoEvent[] }) {
           {m.kind === 'personal' ? (
             <View style={[styles.dot, { backgroundColor: m.color ?? colors.ink3 }]} />
           ) : (
-            <Text style={[styles.glyph, m.kind === 'nous' ? styles.glyphNous : styles.glyphProp]}>
-              {m.kind === 'nous' ? '♥' : '♡'}
-            </Text>
+            <Heart size={8} color={m.kind === 'nous' ? colors.accent : colors.plum} />
           )}
         </View>
       ))}
@@ -105,7 +104,7 @@ export function DayStrip({ weekOffset, day, events, onSelect }: Props) {
             >
               {date.getDate()}
             </Text>
-            <View style={styles.todayRow}>{today && <Text style={styles.todayHeart}>♥</Text>}</View>
+            <View style={styles.todayRow}>{today && <Heart size={8} color={colors.accent} />}</View>
             <Cut events={dayEvents} />
           </Pressable>
         )
@@ -141,7 +140,6 @@ const styles = StyleSheet.create({
   numCharge: { color: colors.ink, fontWeight: '500' },
   numToday: { color: colors.accentInk },
   todayRow: { height: 8, justifyContent: 'center' },
-  todayHeart: { color: colors.accent, fontSize: 8, lineHeight: 8 },
   cut: {
     width: CUT_W,
     height: CUT_H,
@@ -151,7 +149,4 @@ const styles = StyleSheet.create({
   },
   mark: { position: 'absolute', left: 0, right: 0, height: 8, alignItems: 'center', justifyContent: 'center' },
   dot: { width: 4, height: 4, borderRadius: 2 },
-  glyph: { fontSize: 8, lineHeight: 8 },
-  glyphNous: { color: colors.accent },
-  glyphProp: { color: colors.plum },
 })
