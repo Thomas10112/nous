@@ -196,6 +196,23 @@ plus risqué de la stack tient, et lever les prérequis. **Point de validation.*
   Adaptatif, résolution notée, Nous en « jamais en veille » et batterie sans restriction —
   sinon on mesure un autre téléphone.
 
+  **Ce que l'instrument doit dire, et ne pas dire.** La première version du compteur a
+  annoncé « 144 Hz » sur un S24 Ultra qui plafonne à 120, parce qu'elle retenait le plus
+  court intervalle jamais observé : un seul hoquet d'horloge verrouillait la valeur pour
+  toute la session. Trois règles en découlent, appliquées dans les deux clients.
+  1. **Aucune liste de fréquences.** On mesure une période en millisecondes par vote
+     majoritaire — une valeur ne l'emporte que si elle revient — et jamais en collant le
+     résultat sur 60/90/120. Arrondir 8,33 ms vers « 144 Hz » transforme 0,8 ms de gigue en
+     20 % d'erreur de budget.
+  2. **On ne calibre que pendant un geste.** Sur une dalle LTPO la cadence au repos n'a
+     aucun rapport avec celle du glissé, qui est la seule que le critère juge.
+  3. **Un relevé n'est un résultat que sans réserve.** « calibrage … % » signifie que la
+     mesure n'est pas encore sûre, « ≈ » qu'elle a été prise au repos : dans les deux cas
+     on refait un geste plus long, on ne recopie rien. Et le compteur doit être armé par
+     **tous** les gestes, pas seulement le glissé d'un bloc — sinon un balayage se solde
+     par « 0/0 », qui se lit à tort « aucune image longue » alors qu'il veut dire « rien
+     n'a été mesuré ».
+
 **Fini quand** : stack validée par écrit après le spike ; appareils identifiés (dont la
 réponse iPhone / pas d'iPhone) ; projet Supabase joignable ; les deux `auth.uid()` connus ;
 volumes mesurés ; ADR-009 accepté par le couple.

@@ -140,9 +140,20 @@ pris sobres pour qu'elle soit Nous :
    disque) ; moment = étoile ; souvenir = `MemoryStamp` (photo à coin replié) ;
    activité = cœur ; perso = point de la couleur de la personne. Mois et Année
    n'utilisent que ces quatre marques et des chiffres Fraunces, **aucun titre**.
-5. **La nuit repliée.** La grille montre 7 h → 23 h par défaut (`hourRange`), la nuit
-   repliée en une bande « 🌙 nuit » d'un créneau, dépliable. L'heure d'un bloc saisi
-   s'écrit « de 9 h 30 à 11 h » en Fraunces italique au-dessus du bloc, jamais « 09:30–11:00 ».
+5. **La nuit repliée.** La grille montre 7 h → 23 h par défaut, la nuit repliée en **deux
+   bandes** de 28 px — minuit → 7 h en haut, 23 h → minuit en bas — qui annoncent ce
+   qu'elles cachent (« la nuit · 2 ») et se déplient d'un tap sans que la page saute.
+   L'échelle créneau → pixel cesse donc d'être linéaire : `slotToY` / `yToSlot`
+   ([06 §3](06-moteur-calendrier.md)) sont le seul chemin autorisé, et tout calcul en
+   `créneau × hauteur` afficherait une fausse heure. Éprouvé dans les deux maquettes.
+   Pas d'emoji dans la bande, pour la raison du point 6. L'heure d'un bloc saisi s'écrit
+   « de 9 h 30 à 11 h » en Fraunces italique au-dessus du bloc, jamais « 09:30–11:00 ».
+6. **Les marques se dessinent, elles ne s'écrivent pas.** Sur le S24 Ultra, `♥` (U+2665)
+   sort en **rouge vif** : la police système d'Android ne contient pas ce caractère,
+   Android va le chercher dans la police d'emojis, qui le peint en couleur et ignore le
+   `color` demandé. La preuve est venue de l'appareil même — le `♡` de la proposition, lui,
+   sortait en mauve, n'étant pas dans cette police. Cœur, étoile, photo à coin replié : tous
+   en tracé (formes, ou SVG côté web), jamais en caractère, ni en `content:` CSS.
 
 **Anti-motifs** (vérifiés à la revue de Phase 7) : disque « aujourd'hui », barre latérale
 colorée, lignes de 30 min, chips de catégorie sur les blocs, en-têtes gris, ripple
