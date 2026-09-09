@@ -255,7 +255,7 @@ export function WeekScreen() {
                         day={day}
                         events={dayEvents}
                         selectedId={selectedId}
-                        isToday={day === TODAY_INDEX && weekOffset === 0}
+                        isToday={isToday(dateOf(weekOffset, day))}
                       />
                     ))}
                     {weekOffset === 0 && (
