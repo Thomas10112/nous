@@ -104,7 +104,27 @@ Relancez `npm run dev`. En bas de la barre latérale, le point doit passer au ve
 
 ### 4. Mettre le site en ligne
 
-Pour y accéder depuis vos téléphones, il faut l'héberger. Le plus simple, gratuit :
+Pour y accéder depuis vos téléphones, il faut l'héberger. Deux chemins, tous les
+deux gratuits.
+
+**Depuis GitHub, sans rien installer.** Le dépôt contient déjà tout ce qu'il
+faut : `.github/workflows/deploy.yml` reconstruit et publie le site sur **GitHub
+Pages** à chaque push sur `master`.
+
+1. Dans **Settings → Secrets and variables → Actions**, ajoutez les trois
+   secrets `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` et `VITE_SPACE_ID`.
+   Sans eux le site se construit quand même, mais chaque navigateur garde ses
+   propres données — vous ne verriez pas la même chose.
+2. Poussez sur `master` (ou lancez « Mettre le site en ligne » depuis l'onglet
+   **Actions**). L'adresse s'affiche à la fin du job.
+
+> Sur un dépôt **public**, la page publiée est visible de qui connaît l'adresse.
+> Vos données, elles, restent derrière les deux comptes Supabase. Si vous
+> préférez que la page elle-même soit inaccessible, passez le dépôt en privé et
+> utilisez Vercel.
+
+**Depuis Vercel ou Netlify.** Une adresse plus courte, un domaine à vous, et le
+dépôt peut rester privé :
 
 1. Poussez le dossier sur un dépôt **GitHub privé**.
 2. Sur [vercel.com](https://vercel.com) (ou [netlify.com](https://netlify.com)),
@@ -112,8 +132,9 @@ Pour y accéder depuis vos téléphones, il faut l'héberger. Le plus simple, gr
 3. Ajoutez les trois variables `VITE_…` dans les réglages du projet.
 4. Déployez.
 
-Vous obtenez une adresse à ouvrir depuis n'importe où. Ajoutez-la à l'écran
-d'accueil de vos téléphones : elle s'ouvre comme une application.
+Dans les deux cas vous obtenez une adresse à ouvrir depuis n'importe où.
+Ajoutez-la à l'écran d'accueil de vos téléphones : elle s'ouvre comme une
+application.
 
 ### Créer les deux comptes
 

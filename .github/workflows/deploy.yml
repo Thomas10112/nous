@@ -1,0 +1,74 @@
+# ------------------------------------------------------------------
+#  Mettre le site en ligne, tout seul, à chaque push sur master.
+#
+#  Le site part sur GitHub Pages : rien à installer, rien à payer.
+#  Il utilise HashRouter et des chemins relatifs (voir src/main.tsx et
+#  vite.config.ts), donc il fonctionne tel quel dans un sous-dossier —
+#  aucune configuration serveur n'est nécessaire.
+#
+#  Les trois VITE_… viennent des secrets du dépôt
+#  (Settings → Secrets and variables → Actions). Sans eux le site se
+#  construit quand même, mais en mode local : chaque navigateur garde
+#  ses propres données, et vous ne voyez pas la même chose.
+# ------------------------------------------------------------------
+
+name: Mettre le site en ligne
+
+on:
+  push:
+    branches: [master]
+  # Permet aussi de relancer la mise en ligne à la main, depuis l'onglet
+  # « Actions » du dépôt.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Une mise en ligne à la fois : si deux push se suivent, seule la plus
+# récente arrive au bout.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Construire
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Compiler le site
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SPACE_ID: ${{ secrets.VITE_SPACE_ID }}
+
+      - uses: actions/configure-pages@v5
+        with:
+          # Active GitHub Pages du dépôt à la première exécution.
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Mettre en ligne
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - id: deploiement
+        uses: actions/deploy-pages@v4
