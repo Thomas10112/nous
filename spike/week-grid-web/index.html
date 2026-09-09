@@ -67,7 +67,7 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 }
 .dayhead .d { font-family: var(--serif); font-size: 17px; color: var(--ink); display: block; line-height: 1.1; }
 .dayhead[data-today] .d { color: var(--accent-ink); }
-.dayhead[data-today]::after { content: '♥'; display: block; font-size: 9px; color: var(--accent); line-height: 1; }
+.dayhead[data-today]::after { content: ''; display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); margin: 1px auto 0; }
 .dayhead[data-focus] { flex-grow: 2.6; }
 .dayhead[data-focus] .d { font-size: 19px; }
 
@@ -93,7 +93,7 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 .col[data-focus] { flex-grow: 2.6; }
 .col[data-dim] { flex-grow: .73; }
 .now { position: absolute; left: 0; right: 0; height: 1px; background: var(--accent); pointer-events: none; z-index: 3; }
-.now::before { content: '♥'; position: absolute; left: 2px; top: -8px; font-size: 10px; color: var(--accent); }
+.now::before { content: ''; position: absolute; left: 2px; top: -3px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
 
 .ev {
   position: absolute; left: 3px; right: 3px; border-radius: 11px; padding: 4px 7px; overflow: hidden;
@@ -144,7 +144,20 @@ input, textarea { -webkit-user-select: auto; user-select: auto; }
 .mk.dot { width: 4px; height: 4px; border-radius: 50%; }
 .mk.nous { color: var(--accent); }
 .mk.prop { color: var(--plum); }
-.mk.today { position: static; transform: none; color: var(--accent); font-size: 8px; }
+.mk.today { position: static; transform: none; color: var(--accent); }
+.mk.heart { display: block; }
+
+/* la nuit repliée : deux bandes qui disent ce qu'elles cachent */
+.nightband {
+  position: absolute; left: 0; right: 0; border: 0; padding: 0; margin: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-style: italic; font-size: 11.5px; color: var(--ink-3);
+  background: var(--surface-3);
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  z-index: 3;
+}
+/* dépliée, elle ne peint plus rien et se réduit à son étiquette */
+.nightband[data-open] { background: none; border: 0; color: var(--accent-ink); z-index: 1; }
 
 .daytitle {
   flex: none; border: 0; background: none; padding: 4px 12px 8px; text-align: center; width: 100%;

@@ -39,6 +39,9 @@ export function demoWeek(offset) {
     { id: 'e22', title: 'Piscine', kind: 'personal', personColor: MIMINE, window: w(3, 15, 17) },
     { id: 'e23', title: 'Rendez-vous banque', kind: 'personal', personColor: MIMI, window: w(4, 21, 23) },
     { id: 'e24', title: 'Anniversaire de Tom', kind: 'nous', window: w(6, 38, 42) },
+    // dans la nuit repliée : sans eux, la bande n'aurait jamais rien à annoncer
+    { id: 'e25', title: 'Vol tôt', kind: 'nous', window: w(6, 10, 13) },
+    { id: 'e26', title: 'Retour de soirée', kind: 'personal', personColor: MIMINE, window: w(5, 46, 48) },
   ]
 }
 

@@ -43,7 +43,7 @@ const check = (name, ok, extra = '') => {
 
 /* 1. rendu */
 const count = await page.locator('#screen-week .ev').count()
-check('24 blocs rendus dans la Semaine', count === 24, `${count} blocs`)
+check('26 blocs rendus dans la Semaine', count === 26, `${count} blocs`)
 check('gouttière des heures', (await page.locator('#gutter span').count()) === 24)
 check('7 colonnes', (await page.locator('.col').count()) === 7)
 
@@ -57,7 +57,7 @@ const before = await page.evaluate(() => document.getElementById('scroller').scr
 const topInGridBefore = await target.evaluate((el) => el.style.top)
 await touch('touchStart', box.x + box.width / 2, box.y + 8)
 await sleep(60)
-for (let i = 1; i <= 6; i += 1) await touch('touchMove', box.x + box.width / 2, box.y + 8 - i * 12)
+for (let i = 1; i <= 6; i += 1) { await touch('touchMove', box.x + box.width / 2, box.y + 8 - i * 12); await sleep(12) }
 await touch('touchEnd', 0, 0)
 await sleep(120)
 const after = await page.evaluate(() => document.getElementById('scroller').scrollTop)
@@ -75,7 +75,7 @@ await touch('touchStart', box.x + box.width / 2, box.y + 8)
 await sleep(450)
 const lifted = await target.evaluate((el) => el.hasAttribute('data-lift'))
 check('long-press de 350 ms : le bloc se soulève', lifted)
-for (let i = 1; i <= 8; i += 1) await touch('touchMove', box.x + box.width / 2, box.y + 8 + i * 8)
+for (let i = 1; i <= 8; i += 1) { await touch('touchMove', box.x + box.width / 2, box.y + 8 + i * 8); await sleep(12) }
 await sleep(60)
 await touch('touchEnd', 0, 0)
 await sleep(150)
@@ -94,7 +94,38 @@ await sleep(120)
 check('tap : sélection', (await page.locator('#screen-week .ev[data-sel]').count()) === 1)
 check('tap : deux poignées', (await page.locator('#screen-week .handle').count()) === 2)
 
-/* 5. onglets */
+/* 5. la nuit repliée (vue Jour) */
+await page.locator('.tab[data-screen="day"]').click()
+await sleep(300)
+const bandes = page.locator('#screen-day .nightband')
+check('deux bandes de nuit', (await bandes.count()) === 2)
+const hauteurRepliee = await page.locator('#daycanvas').evaluate((el) => el.getBoundingClientRect().height)
+// 2 × 28 px de bande + 32 créneaux de 30 px : la nuit ne prend plus 14 heures
+check('canevas replié', Math.round(hauteurRepliee) === 1016, `${Math.round(hauteurRepliee)} px`)
+// 7 h doit tomber juste sous la bande du haut, donc visible sans défiler
+const y7 = await page.evaluate(() => {
+  const g = document.querySelectorAll('#daygutter span')
+  return g[7] instanceof HTMLElement ? parseFloat(g[7].style.top) : -1
+})
+check('7 h en haut de la page', y7 === 28, `y = ${y7}`)
+const cacheMinuit = await page.evaluate(() => {
+  const g = document.querySelectorAll('#daygutter span')
+  return g[3] instanceof HTMLElement ? g[3].style.opacity : '?'
+})
+check('les heures de la nuit sont effacées', cacheMinuit === '0', `opacité ${cacheMinuit}`)
+check('la bande annonce ce qu\'elle cache', /^la nuit/.test((await bandes.first().textContent()) ?? ''))
+
+await bandes.first().click()
+await sleep(250)
+const hauteurDepliee = await page.locator('#daycanvas').evaluate((el) => el.getBoundingClientRect().height)
+check('la nuit se déplie', Math.round(hauteurDepliee) === 1440, `${Math.round(hauteurDepliee)} px`)
+check('et se referme d\'un tap', ((await bandes.first().textContent()) ?? '').includes('replier'))
+await bandes.first().click()
+await sleep(250)
+check('retour à la nuit repliée',
+  Math.round(await page.locator('#daycanvas').evaluate((el) => el.getBoundingClientRect().height)) === 1016)
+
+/* 6. onglets */
 await page.locator('.tab[data-screen="measures"]').click()
 await sleep(300)
 check('onglet Mesures', await page.locator('#screen-measures').isVisible())

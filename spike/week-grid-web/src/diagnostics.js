@@ -275,8 +275,11 @@ function render() {
 
 export async function refresh() {
   const m = meter.report()
-  results['Fréquence'] = m.hz ? `${m.hz} Hz` : 'pas encore mesurée'
-  results['Budget'] = m.hz ? `${m.budgetMs.toFixed(1)} ms` : '—'
+  // « mesurée pendant un geste » est la seule mention qui autorise à recopier
+  // le chiffre dans le compte rendu : une valeur relevée au repos ne vaut rien
+  // sur une dalle à cadence variable.
+  results['Fréquence'] = m.hz ? `${m.hz} Hz${m.sure ? '' : ' (au repos, à refaire pendant un geste)'}` : 'pas encore mesurée'
+  results['Période'] = m.hz ? `${m.periodMs.toFixed(2)} ms` : '—'
   results['Marges'] = safeAreas()
   results['Standalone'] = isStandalone() ? 'oui (écran d’accueil)' : 'non (onglet du navigateur)'
   const reg0 = await navigator.serviceWorker?.getRegistration()

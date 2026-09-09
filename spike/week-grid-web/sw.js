@@ -2,7 +2,7 @@
    navigation avec repli sur le cache. Une version = un cache ; les anciens
    sont supprimés à l'activation. */
 
-const VERSION = 'nous-spike-v2'
+const VERSION = 'nous-spike-v3'
 const SHELL = [
   './',
   './index.html',

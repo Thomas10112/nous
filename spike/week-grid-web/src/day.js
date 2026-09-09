@@ -11,7 +11,7 @@
    assez larges pour qu'on lise enfin les titres.
    ------------------------------------------------------------------ */
 
-import { DAYS_PER_WEEK, SLOTS_PER_DAY, clamp, formatRange, moveWindow, resizeEnd, resizeStart, slotAt, snapSlot } from './domain/time.js'
+import { DAYS_PER_WEEK, NIGHT_END, NIGHT_START, SLOTS_PER_DAY, clamp, dayHeight, formatRange, moveWindow, resizeEnd, resizeStart, slotAtY, slotToY, snapSlotAt, yToSlot } from './domain/time.js'
 import { layoutDay } from './domain/layout.js'
 import { DAY_END, DAY_START, inkWeight, phraseOfDay } from './domain/phrase.js'
 import { DAY_LABELS, demoWeek } from './data/demo.js'
@@ -21,6 +21,8 @@ import * as meter from './frame-meter.js'
 /** @typedef {import('./domain/time.js').SlotWindow} SlotWindow */
 
 const SLOT_BASE_H = 30
+/** Hauteur d'une bande de nuit repliée (parti pris n°5 du design system). */
+const BAND_H = 28
 const ZOOM_MIN = 0.8
 const ZOOM_MAX = 1.8
 const LONG_PRESS_MS = 350
@@ -45,6 +47,8 @@ let events = demoWeek(0)
 /** @type {string | null} */
 let selectedId = null
 let zoom = 1
+/** La nuit est repliée par défaut : sans cela la page s'ouvre sur dix heures de vide. */
+let nightFolded = true
 
 /** @type {Map<string, HTMLElement>} */
 const blocks = new Map()
@@ -52,6 +56,17 @@ const blocks = new Map()
 let ghost = null
 
 const slotH = () => SLOT_BASE_H * zoom
+/** L'échelle courante — toute conversion créneau ↔ pixel passe par elle. */
+const scale = () => ({ slotH: slotH(), bandH: BAND_H, folded: nightFolded })
+
+/**
+ * Un cœur DESSINÉ, jamais écrit : `♥` n'est pas dans la police système
+ * d'Android, qui va le chercher dans la police d'emojis et le rend en rouge
+ * vif, hors palette, en ignorant la couleur demandée.
+ */
+const heart = (/** @type {string} */ cls, /** @type {string} */ style) =>
+  `<svg class="mk heart ${cls}" style="${style}" viewBox="0 0 8 8" width="8" height="8" aria-hidden="true">` +
+  '<path d="M4 7.1C1.25 5.15.45 3.9.45 2.75A1.75 1.75 0 0 1 4 2.05a1.75 1.75 0 0 1 3.55.7c0 1.15-.8 2.4-3.55 4.35Z" fill="currentColor"/></svg>'
 
 /* ------------------------------- dates ------------------------------- */
 
@@ -121,8 +136,8 @@ function cutFor(/** @type {number} */ d) {
     // décalage en pixels, jamais en pourcentage : la tranche ne fait que 13 px
     const dx = near === 0 ? 0 : near === 1 ? 3.5 : -3.5
     const style = `top:${(t * 100).toFixed(1)}%;left:calc(50% + ${dx}px)`
-    if (e.kind === 'nous') out.push(`<i class="mk nous" style="${style}">♥</i>`)
-    else if (e.kind === 'proposed') out.push(`<i class="mk prop" style="${style}">♡</i>`)
+    if (e.kind === 'nous') out.push(heart('nous', style))
+    else if (e.kind === 'proposed') out.push(heart('prop', style))
     else out.push(`<i class="mk dot" style="${style};background:${e.personColor ?? 'var(--ink-3)'}"></i>`)
   }
   return out.join('')
@@ -140,7 +155,7 @@ function paintStrip() {
     const count = events.filter((e) => e.window.day === d).length
     if (w) w.textContent = (DAY_LABELS[d] ?? '').slice(0, 1)
     if (n) { n.textContent = String(date.getDate()); n.setAttribute('data-ink', inkWeight(count)) }
-    if (tod) tod.innerHTML = isToday(date) ? '<i class="mk today">♥</i>' : ''
+    if (tod) tod.innerHTML = isToday(date) ? heart('today', '') : ''
     if (cut) cut.innerHTML = cutFor(d)
     cell.toggleAttribute('data-sel', d === day)
     cell.toggleAttribute('data-today', isToday(date))
@@ -185,26 +200,68 @@ function buildStatic() {
   now.className = 'now'
   now.id = 'daynow'
   colEl.appendChild(now)
+  for (const edge of ['top', 'bottom']) {
+    const b = document.createElement('button')
+    b.className = 'nightband'
+    b.dataset.edge = edge
+    b.addEventListener('click', toggleNight)
+    colEl.appendChild(b)
+  }
+}
+
+/**
+ * Replier ou déplier la nuit sans que la page saute : on note l'instant qui
+ * occupe le haut de l'écran, on change d'échelle, on le remet au même endroit.
+ */
+function toggleNight() {
+  const repere = yToSlot(scroller.scrollTop, scale())
+  nightFolded = !nightFolded
+  applySizes()
+  scroller.scrollTop = Math.max(0, slotToY(repere, scale()))
 }
 
 function applySizes() {
-  const h = slotH()
-  canvas.style.height = `${SLOTS_PER_DAY * h}px`
-  gutterEl.querySelectorAll('span').forEach((s, i) => {
-    ;/** @type {HTMLElement} */ (s).style.top = `${i * 2 * h}px`
+  const s = scale()
+  canvas.style.height = `${dayHeight(s)}px`
+  gutterEl.querySelectorAll('span').forEach((el, i) => {
+    const span = /** @type {HTMLElement} */ (el)
+    span.style.top = `${slotToY(i * 2, s)}px`
+    // une heure prise dans la nuit repliée n'a plus de place où s'écrire
+    span.style.opacity = s.folded && (i * 2 < NIGHT_END || i * 2 > NIGHT_START) ? '0' : ''
   })
   const line = document.getElementById('daynow')
   if (line) {
     const d = new Date()
-    line.style.top = `${((d.getHours() * 60 + d.getMinutes()) / 30) * h}px`
+    line.style.top = `${slotToY((d.getHours() * 60 + d.getMinutes()) / 30, s)}px`
     line.style.display = isToday(dateOf(weekOffset, day)) ? '' : 'none'
+  }
+  const dayEvents = events.filter((e) => e.window.day === day)
+  for (const el of colEl.querySelectorAll('.nightband')) {
+    const b = /** @type {HTMLElement} */ (el)
+    const haut = b.dataset.edge === 'top'
+    if (s.folded) {
+      const a = haut ? 0 : NIGHT_START
+      const z = haut ? NIGHT_END : SLOTS_PER_DAY
+      const n = dayEvents.filter((e) =>
+        haut ? e.window.endSlot <= NIGHT_END : e.window.startSlot >= NIGHT_START).length
+      b.style.top = `${slotToY(a, s)}px`
+      b.style.height = `${slotToY(z, s) - slotToY(a, s)}px`
+      b.textContent = n > 0 ? `la nuit · ${n}` : 'la nuit'
+      b.removeAttribute('data-open')
+    } else {
+      // dépliée, la bande se réduit à son étiquette et ne couvre plus la grille
+      b.style.height = '26px'
+      b.style.top = `${haut ? slotToY(NIGHT_END, s) - 26 : slotToY(NIGHT_START, s)}px`
+      b.textContent = 'replier la nuit'
+      b.setAttribute('data-open', '')
+    }
   }
 }
 
 function renderDay() {
   blocks.forEach((el) => el.remove())
   blocks.clear()
-  const h = slotH()
+  const sc = scale()
   const dayEvents = events.filter((e) => e.window.day === day)
   const placements = layoutDay(
     dayEvents.map((e) => ({ id: e.id, startSlot: e.window.startSlot, endSlot: e.window.endSlot })),
@@ -224,8 +281,9 @@ function renderDay() {
     const width = 100 / p.columns
     el.style.left = `calc(${p.column * width}% + ${4 + p.nested * 10}px)`
     el.style.width = `calc(${width}% - ${8 + p.nested * 10}px)`
-    el.style.top = `${ev.window.startSlot * h}px`
-    el.style.height = `${(ev.window.endSlot - ev.window.startSlot) * h - 3}px`
+    const top = slotToY(ev.window.startSlot, sc)
+    el.style.top = `${top}px`
+    el.style.height = `${Math.max(2, slotToY(ev.window.endSlot, sc) - top - 3)}px`
     el.innerHTML =
       `<div class="t">${ev.title}</div><div class="r">${formatRange(ev.window)}</div>`
     if (ev.id === selectedId) {
@@ -319,12 +377,12 @@ function onPointerDown(e) {
       vibrate(12)
     } else if (press.onBackground) {
       const rect = colEl.getBoundingClientRect()
-      const start = slotAt(press.y - rect.top, slotH())
+      const start = slotAtY(press.y - rect.top, scale())
       const w = { day, startSlot: start, endSlot: Math.min(start + 2, SLOTS_PER_DAY) }
       ghost = document.createElement('div')
       ghost.className = 'ghost'
-      ghost.style.top = `${w.startSlot * slotH()}px`
-      ghost.style.height = `${(w.endSlot - w.startSlot) * slotH()}px`
+      ghost.style.top = `${slotToY(w.startSlot, scale())}px`
+      ghost.style.height = `${slotToY(w.endSlot, scale()) - slotToY(w.startSlot, scale())}px`
       colEl.appendChild(ghost)
       beginDrag('create', '', w, e)
       vibrate(12)
@@ -365,8 +423,12 @@ function onPointerMove(e) {
   if (!drag) return
 
   autoScroll = edgeSpeed(e.clientY)
+  const sc = scale()
   const dy = e.clientY - drag.startY + (scroller.scrollTop - drag.scrollTop0)
-  const slots = Math.round(dy / slotH())
+  // Sous une échelle repliée, un même nombre de pixels ne vaut pas le même
+  // nombre de créneaux : on convertit une position absolue, jamais un delta.
+  const ancre = drag.kind === 'resize-end' ? drag.base.endSlot : drag.base.startSlot
+  const slots = Math.round(yToSlot(slotToY(ancre, sc) + dy, sc)) - ancre
   if (slots !== drag.lastSlots) { drag.lastSlots = slots; vibrate(4) }
 
   if (drag.kind === 'move') paint(drag.id, moveWindow(drag.base, slots, 0))
@@ -374,8 +436,8 @@ function onPointerMove(e) {
   else if (drag.kind === 'resize-end') paint(drag.id, resizeEnd(drag.base, slots))
   else if (drag.kind === 'create' && ghost) {
     const rect = colEl.getBoundingClientRect()
-    const end = clamp(snapSlot(e.clientY - rect.top, slotH()), drag.base.startSlot + 1, SLOTS_PER_DAY)
-    ghost.style.height = `${(end - drag.base.startSlot) * slotH()}px`
+    const end = clamp(snapSlotAt(e.clientY - rect.top, sc), drag.base.startSlot + 1, SLOTS_PER_DAY)
+    ghost.style.height = `${slotToY(end, sc) - slotToY(drag.base.startSlot, sc)}px`
     drag.base = { ...drag.base, endSlot: end }
   }
 }
@@ -433,9 +495,10 @@ function commit(id, w) {
 function paint(id, w) {
   const el = blocks.get(id)
   if (!el) return
-  const h = slotH()
-  el.style.top = `${w.startSlot * h}px`
-  el.style.height = `${(w.endSlot - w.startSlot) * h - 3}px`
+  const sc = scale()
+  const top = slotToY(w.startSlot, sc)
+  el.style.top = `${top}px`
+  el.style.height = `${Math.max(2, slotToY(w.endSlot, sc) - top - 3)}px`
   const r = el.querySelector('.r')
   if (r) r.textContent = formatRange(w)
 }
@@ -528,8 +591,8 @@ export function mountDay() {
   buildStatic()
   paintStrip()
   renderDay()
-  // 10 px de marge pour que le repère « 7 h » ne soit pas coupé en deux
-  requestAnimationFrame(() => { scroller.scrollTop = 7 * 2 * slotH() - 10 })
+  // Avec la nuit repliée, 7 h tombe à 28 px du haut : il n'y a plus rien à sauter.
+  requestAnimationFrame(() => { scroller.scrollTop = 0 })
 }
 
 /** Revenir à aujourd'hui, depuis le titre. */
@@ -540,5 +603,5 @@ export function today() {
   selectedId = null
   paintStrip()
   renderDay()
-  scroller.scrollTop = Math.max(0, (new Date().getHours() * 2 - 2) * slotH())
+  scroller.scrollTop = Math.max(0, slotToY((new Date().getHours() - 1) * 2, scale()))
 }

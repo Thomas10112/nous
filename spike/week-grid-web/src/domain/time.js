@@ -50,3 +50,52 @@ export function formatSlot(slot) {
 
 /** « de 9 h 30 à 11 h ». @type {(w: SlotWindow) => string} */
 export const formatRange = (w) => `de ${formatSlot(w.startSlot)} à ${formatSlot(w.endSlot)}`
+
+/* ------------------------------------------------------------------
+   La nuit repliée — même échelle que le client React Native.
+
+   Parti pris n°5 du design system : « 7 h → 23 h par défaut, la nuit repliée
+   en une bande dépliable ». L'échelle créneau → pixel cesse donc d'être
+   linéaire, et TOUT ce qui convertit doit passer par ici.
+   ------------------------------------------------------------------ */
+
+/** 7 h : fin de la bande du matin. */
+export const NIGHT_END = 14
+/** 23 h : début de la bande du soir. */
+export const NIGHT_START = 46
+
+/** @typedef {{ slotH: number, bandH: number, folded: boolean }} DayScale */
+
+/** @type {(slot: number, s: DayScale) => number} */
+export function slotToY(slot, s) {
+  if (!s.folded) return slot * s.slotH
+  if (slot <= NIGHT_END) return (slot / NIGHT_END) * s.bandH
+  const dayBottom = s.bandH + (NIGHT_START - NIGHT_END) * s.slotH
+  if (slot <= NIGHT_START) return s.bandH + (slot - NIGHT_END) * s.slotH
+  return dayBottom + ((slot - NIGHT_START) / (SLOTS_PER_DAY - NIGHT_START)) * s.bandH
+}
+
+/** @type {(y: number, s: DayScale) => number} */
+export function yToSlot(y, s) {
+  if (!s.folded) return y / s.slotH
+  const dayTop = s.bandH
+  const dayBottom = s.bandH + (NIGHT_START - NIGHT_END) * s.slotH
+  if (y <= dayTop) return (y / s.bandH) * NIGHT_END
+  if (y >= dayBottom) return NIGHT_START + ((y - dayBottom) / s.bandH) * (SLOTS_PER_DAY - NIGHT_START)
+  return NIGHT_END + (y - dayTop) / s.slotH
+}
+
+/** @type {(s: DayScale) => number} */
+export function dayHeight(s) {
+  return s.folded ? 2 * s.bandH + (NIGHT_START - NIGHT_END) * s.slotH : SLOTS_PER_DAY * s.slotH
+}
+
+/** @type {(y: number, s: DayScale) => number} */
+export function snapSlotAt(y, s) {
+  return clamp(Math.round(yToSlot(y, s)), 0, SLOTS_PER_DAY)
+}
+
+/** @type {(y: number, s: DayScale) => number} */
+export function slotAtY(y, s) {
+  return clamp(Math.floor(yToSlot(y, s)), 0, SLOTS_PER_DAY - 1)
+}
