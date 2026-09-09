@@ -215,7 +215,7 @@ function render() {
     root.replaceChildren(
       card('Écran et système', [
         ['Fréquence mesurée', results['Fréquence'] ?? '…'],
-        ['Budget par frame', results['Budget'] ?? '…'],
+        ['Période par image', results['Période'] ?? '…'],
         ['Densité de pixels', String(window.devicePixelRatio)],
         ['Fenêtre', `${window.innerWidth} × ${window.innerHeight} px`],
         ['Marges sûres (haut / bas)', results['Marges'] ?? '—'],
@@ -223,7 +223,7 @@ function render() {
         ['Push disponible', results['Push'] ?? '…'],
         ['Système', results['Système'] ?? '…'],
       ], undefined,
-        'Faites d’abord un drag dans l’onglet Semaine : la fréquence se mesure toute seule.'),
+        'Faites d’abord un geste franc de quelques secondes dans l’onglet Jour : la cadence ne se mesure que pendant un geste, et tant qu’elle dit « calibrage » le chiffre n’est pas fiable.'),
 
       card('Stockage hors ligne', [
         ['Utilisé', results['Utilisé'] ?? '…'],
