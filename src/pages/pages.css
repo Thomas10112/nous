@@ -337,6 +337,19 @@
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
+.rdv__zone {
+  max-width: 46ch;
+  padding: 8px 14px;
+  border-radius: var(--r-full);
+  background: var(--gold-soft);
+  color: var(--ink-2);
+  font-size: var(--t-xs);
+  line-height: 1.6;
+}
+.rdv__zone b {
+  font-weight: 600;
+  color: var(--ink);
+}
 .rdv__foot {
   display: flex;
   align-items: center;

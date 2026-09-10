@@ -12,7 +12,16 @@ import { Link } from 'react-router-dom'
 import { useStore } from '../data/store'
 import { Icon } from '../components/ui/Icon'
 import { Button, Empty } from '../components/ui/primitives'
-import { countdown, formatDayDate, formatTime, pad2, toDate } from '../lib/date'
+import {
+  ZONE,
+  countdown,
+  deviceMatchesZone,
+  deviceZoneName,
+  formatDayDateInZone,
+  formatTimeInZone,
+  pad2,
+  zonedTimeToInstant,
+} from '../lib/date'
 
 const nf = new Intl.NumberFormat('fr-FR')
 const plural = (n: number, one: string, many: string) => `${nf.format(n)} ${n === 1 ? one : many}`
@@ -20,7 +29,9 @@ const plural = (n: number, one: string, many: string) => `${nf.format(n)} ${n ==
 export default function Rendezvous() {
   const { settings } = useStore()
   const rdv = settings.rendezvous
-  const target = toDate(rdv?.at)
+  // Ancre sur l'heure de Paris : un PC mal reglé ne doit pas decaler le
+  // decompte, et vous devez voir le meme nombre tous les deux.
+  const target = rdv?.at ? zonedTimeToInstant(rdv.at) : null
 
   const [now, setNow] = useState(() => new Date())
   useEffect(() => {
@@ -64,7 +75,7 @@ export default function Rendezvous() {
         <h1 className="rdv__title">{left.done ? 'On y est.' : title}</h1>
 
         <p className="rdv__when">
-          {formatDayDate(target)} — <b>{formatTime(target)}</b>
+          {formatDayDateInZone(target)} — <b>{formatTimeInZone(target)}</b>
           {rdv.place && (
             <span className="rdv__place">
               <Icon name="pin" size={13} />
@@ -75,7 +86,7 @@ export default function Rendezvous() {
 
         {left.done ? (
           <>
-            <div className="rdv__now">{formatTime(target)}</div>
+            <div className="rdv__now">{formatTimeInZone(target)}</div>
             <p className="rdv__otherwise">
               Le compte à rebours est fini. La suite ne se raconte pas ici.
             </p>
@@ -99,6 +110,13 @@ export default function Rendezvous() {
               <b>{plural(totalSeconds, 'seconde', 'secondes')}</b> à faire passer.
             </p>
           </>
+        )}
+
+        {!deviceMatchesZone(target) && (
+          <p className="rdv__zone">
+            Cet appareil est réglé sur <b>{deviceZoneName()}</b>, pas sur {ZONE} — le décompte
+            vise quand même {formatTimeInZone(target)} à Paris, comme sur le sien.
+          </p>
         )}
 
         <div className="rdv__foot">

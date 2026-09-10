@@ -10,7 +10,7 @@ import { LocalAdapter } from '../data/adapters/local'
 import { storageEstimate } from '../data/idb'
 import { formatBytes } from '../data/media'
 import { downloadJSON, uid } from '../lib/utils'
-import { formatDate, formatDayDate, formatTime } from '../lib/date'
+import { ZONE, formatDate, formatDayDateInZone, formatTimeInZone, zonedTimeToInstant } from '../lib/date'
 import Proposal from './Proposal'
 
 export default function SettingsPage() {
@@ -38,6 +38,9 @@ export default function SettingsPage() {
   /* ----------------------------- Rendez-vous ----------------------------- */
 
   const rdv = settings.rendezvous
+  // On affiche la date telle que la page la comprendra : ancree sur
+  // Paris, pas sur le fuseau de l'appareil qui saisit.
+  const rdvAt = rdv?.at ? zonedTimeToInstant(rdv.at) : null
 
   /** Un seul rendez-vous a la fois : on modifie celui qui existe, ou on le cree. */
   const setRendezvous = (patch: Partial<Rendezvous>) =>
@@ -284,7 +287,11 @@ export default function SettingsPage() {
         <div className="form-grid">
           <Field
             label="On se voit le"
-            hint={rdv?.at ? `Soit ${formatDayDate(rdv.at)} à ${formatTime(rdv.at)}` : 'Date et heure.'}
+            hint={
+              rdvAt
+                ? `Soit ${formatDayDateInZone(rdvAt)} à ${formatTimeInZone(rdvAt)}, heure de Paris`
+                : `Date et heure, lues à l'heure de Paris (${ZONE}).`
+            }
           >
             <DateInput
               type="datetime-local"

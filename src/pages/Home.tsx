@@ -10,11 +10,12 @@ import {
   elapsedSince,
   formatDate,
   formatDateShort,
-  formatDayDate,
-  formatTime,
+  formatDayDateInZone,
+  formatTimeInZone,
   nextAnniversary,
   nextMilestoneDays,
   pad2,
+  zonedTimeToInstant,
 } from '../lib/date'
 import { sortBy } from '../lib/utils'
 import { SettingsModal } from '../components/SettingsModal'
@@ -40,7 +41,8 @@ export default function Home() {
   // Les retrouvailles passent devant l'anniversaire : c'est la date la
   // plus proche, et celle qu'on vient vérifier plusieurs fois par jour.
   const rdv = settings.rendezvous
-  const rdvLeft = rdv?.at ? countdown(rdv.at, tick) : null
+  const rdvAt = rdv?.at ? zonedTimeToInstant(rdv.at) : null
+  const rdvLeft = rdvAt ? countdown(rdvAt, tick) : null
 
   /* ------------------------------ Derniers contenus ------------------------------ */
 
@@ -261,7 +263,7 @@ export default function Home() {
 
         <div className="stack" style={{ gap: 'var(--sp-5)' }}>
           {/* On se voit */}
-          {rdv && rdvLeft && (
+          {rdvAt && rdv && rdvLeft && (
             <Link
               to="/rendez-vous"
               className="upnext"
@@ -288,7 +290,7 @@ export default function Home() {
                   {rdvLeft.done ? 'On y est 🤍' : rdv.title.trim() || 'On se voit'}
                 </div>
                 <div style={{ fontSize: 'var(--t-xs)', color: 'var(--ink-2)' }}>
-                  {formatDayDate(rdv.at)} à {formatTime(rdv.at)}
+                  {formatDayDateInZone(rdvAt)} à {formatTimeInZone(rdvAt)}
                 </div>
                 {rdv.place && (
                   <div style={{ fontSize: 'var(--t-xs)', color: 'var(--ink-3)', marginTop: 4 }}>

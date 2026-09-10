@@ -144,6 +144,82 @@ export const relative = (value: string | Date): string => {
   return say(Math.round(abs / 31536000), 'an', 'ans')
 }
 
+/* ------------------------------------------------------------------
+   Fuseau de reference.
+
+   Un rendez-vous doit viser le MEME instant pour les deux, meme si un
+   PC est mal regle ou si l'un des deux voyage. On l'ancre donc sur un
+   fuseau fixe plutot que sur celui de l'appareil, et on l'affiche dans
+   ce fuseau-la.
+   ------------------------------------------------------------------ */
+
+export const ZONE = 'Europe/Paris'
+
+/** Decalage du fuseau `zone` a l'instant donne, en minutes. */
+const zoneOffsetMinutes = (date: Date, zone: string = ZONE): number => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: zone,
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).formatToParts(date)
+
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0)
+  // Certains moteurs rendent "24" pour minuit : d'ou le modulo.
+  const asUTC = Date.UTC(
+    get('year'), get('month') - 1, get('day'), get('hour') % 24, get('minute'), get('second'),
+  )
+  return (asUTC - Math.floor(date.getTime() / 1000) * 1000) / 60000
+}
+
+/**
+ * Une heure d'horloge ("2026-09-11T18:04") lue dans `zone`, pas dans le
+ * fuseau de l'appareil. Deux passes : la premiere approche le decalage,
+ * la seconde le confirme — ce qui compte la nuit du changement d'heure.
+ */
+export const zonedTimeToInstant = (local: string, zone: string = ZONE): Date | null => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(local)
+  if (!m) return null
+  const [y, mo, d, h, mi] = m.slice(1).map(Number)
+  const wall = Date.UTC(y, mo - 1, d, h, mi)
+  let ts = wall - zoneOffsetMinutes(new Date(wall), zone) * 60000
+  ts = wall - zoneOffsetMinutes(new Date(ts), zone) * 60000
+  return new Date(ts)
+}
+
+/** "vendredi 11 septembre 2026", lu dans `zone`. */
+export const formatDayDateInZone = (date: Date, zone: string = ZONE): string =>
+  new Intl.DateTimeFormat('fr-FR', {
+    timeZone: zone,
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(date)
+
+/** "18 h 04", lu dans `zone`. */
+export const formatTimeInZone = (date: Date, zone: string = ZONE): string =>
+  new Intl.DateTimeFormat('fr-FR', {
+    timeZone: zone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
+    .format(date)
+    .replace(':', ' h ')
+
+/** L'appareil est-il a la meme heure que le fuseau de reference ? */
+export const deviceMatchesZone = (date: Date, zone: string = ZONE): boolean =>
+  -date.getTimezoneOffset() === zoneOffsetMinutes(date, zone)
+
+/** Le fuseau de l'appareil, tel qu'il se nomme ("Europe/Paris", "UTC"...). */
+export const deviceZoneName = (): string =>
+  Intl.DateTimeFormat().resolvedOptions().timeZone || 'inconnu'
+
 /** Decompte jusqu'a une date, en parties. */
 export const countdown = (target: string | Date, now: Date = new Date()) => {
   const d = toDate(target)
