@@ -1,0 +1,353 @@
+/* ------------------------------------------------------------------
+   Moodboard : canevas libre, pan/zoom, dessin, elements deplacables.
+   ------------------------------------------------------------------ */
+
+.mb {
+  position: relative;
+  width: 100%;
+  height: calc(100dvh - 150px);
+  min-height: 460px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  background: var(--surface-2);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  overscroll-behavior: contain;
+}
+@media (max-width: 900px) {
+  .mb {
+    height: calc(100dvh - var(--header-h) - 190px);
+    min-height: 380px;
+  }
+}
+.mb--fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  height: 100dvh;
+  border-radius: 0;
+  border: none;
+}
+
+/* Fonds */
+.mb__paper {
+  position: absolute;
+  inset: 0;
+}
+.mb__paper--dots {
+  background-image: radial-gradient(circle, var(--line-strong) 1px, transparent 1px);
+}
+.mb__paper--grid {
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+}
+.mb__paper--plain {
+  background: var(--surface-2);
+}
+
+.mb__world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+/* -------------------------------- Éléments -------------------------------- */
+.mbel {
+  position: absolute;
+  transform-origin: center center;
+}
+.mbel--interactive {
+  cursor: grab;
+}
+.mbel--interactive:active {
+  cursor: grabbing;
+}
+.mbel--selected::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border: 1.5px solid var(--accent);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.mbel__note {
+  width: 100%;
+  height: 100%;
+  padding: 14px 16px;
+  border-radius: 4px;
+  box-shadow: 0 6px 18px rgba(60, 40, 45, 0.14), 0 1px 2px rgba(60, 40, 45, 0.1);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #3a2b2f;
+}
+
+.mbel__text {
+  width: 100%;
+  height: 100%;
+  font-family: var(--font-display);
+  line-height: 1.25;
+  white-space: pre-wrap;
+  word-break: break-word;
+  display: flex;
+  align-items: center;
+}
+
+.mbel__sticker {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  user-select: none;
+}
+
+.mbel__image {
+  width: 100%;
+  height: 100%;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--surface-3);
+  box-shadow: 0 8px 22px rgba(50, 32, 36, 0.2);
+  padding: 8px 8px 30px;
+  background: #fffdfb;
+}
+[data-theme='dark'] .mbel__image {
+  background: #efe6e2;
+}
+.mbel__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 1px;
+}
+
+.mbel__editor {
+  position: absolute;
+  inset: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  resize: none;
+  font: inherit;
+  color: inherit;
+  padding: inherit;
+  line-height: inherit;
+  overflow: hidden;
+}
+
+/* Poignées */
+.mb__handle {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1.5px solid var(--accent);
+  box-shadow: var(--shadow-sm);
+  z-index: 3;
+}
+.mb__handle--resize {
+  right: -9px;
+  bottom: -9px;
+  cursor: nwse-resize;
+}
+.mb__handle--rotate {
+  right: -9px;
+  top: -9px;
+  cursor: grab;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+}
+
+/* ------------------------------ Barre d'outils ------------------------------ */
+.mb-tools {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 5px;
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  max-width: calc(100% - 24px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.mb-tools::-webkit-scrollbar {
+  display: none;
+}
+.mb-tool {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: var(--r-full);
+  border: none;
+  background: transparent;
+  color: var(--ink-2);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast), transform var(--dur-fast);
+}
+.mb-tool:hover {
+  background: var(--surface-3);
+  color: var(--ink);
+}
+.mb-tool--on {
+  background: var(--accent);
+  color: var(--ink-on-accent);
+}
+.mb-tool--on:hover {
+  background: var(--accent-hover);
+  color: var(--ink-on-accent);
+}
+.mb-tools__sep {
+  width: 1px;
+  height: 22px;
+  background: var(--line);
+  margin: 0 3px;
+  flex-shrink: 0;
+}
+
+/* Réglages du pinceau / couleurs */
+.mb-panel {
+  position: absolute;
+  top: 62px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 19;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  max-width: calc(100% - 24px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.mb-panel::-webkit-scrollbar {
+  display: none;
+}
+.mb-swatch {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: transform var(--dur-fast) var(--ease);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.09);
+}
+.mb-swatch:hover {
+  transform: scale(1.16);
+}
+.mb-swatch--on {
+  border-color: var(--ink);
+  transform: scale(1.12);
+}
+.mb-size {
+  width: 84px;
+}
+
+/* Zoom */
+.mb-zoom {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--r-full);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+}
+.mb-zoom__level {
+  font-size: var(--t-xs);
+  color: var(--ink-2);
+  min-width: 44px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+/* Statut / aide */
+.mb-hint {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  z-index: 18;
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  padding: 5px 12px;
+  border-radius: var(--r-full);
+  border: 1px solid var(--line);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: calc(100% - 130px);
+}
+
+/* Actions sur la sélection */
+.mb-selbar {
+  position: absolute;
+  z-index: 21;
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--r-full);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+/* Palette d'autocollants */
+.sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+  gap: 6px;
+}
+.sticker-btn {
+  aspect-ratio: 1;
+  font-size: 24px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease);
+}
+.sticker-btn:hover {
+  transform: scale(1.1);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}

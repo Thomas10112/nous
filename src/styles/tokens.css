@@ -1,0 +1,202 @@
+/* ------------------------------------------------------------------
+   Jetons de design — palette chaude, douce, jamais criarde.
+   Tout le site lit ces variables : changer une valeur ici suffit.
+   ------------------------------------------------------------------ */
+
+:root {
+  /* Typographie */
+  --font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  --t-xs: 0.75rem;
+  --t-sm: 0.8125rem;
+  --t-base: 0.9375rem;
+  --t-md: 1.0625rem;
+  --t-lg: 1.375rem;
+  --t-xl: 1.875rem;
+  --t-2xl: 2.5rem;
+  --t-3xl: 3.5rem;
+
+  /* Rayons */
+  --r-xs: 8px;
+  --r-sm: 12px;
+  --r-md: 18px;
+  --r-lg: 26px;
+  --r-xl: 36px;
+  --r-full: 999px;
+
+  /* Rythme */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  /* Mouvement */
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 140ms;
+  --dur: 240ms;
+  --dur-slow: 460ms;
+
+  --sidebar-w: 244px;
+  --header-h: 60px;
+}
+
+/* ---------------------------- Thème clair ---------------------------- */
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #faf6f2;
+  --bg-tint: #f3eae3;
+  --surface: #ffffff;
+  --surface-2: #fbf6f3;
+  --surface-3: #f4ece7;
+  --overlay: rgba(46, 34, 38, 0.32);
+
+  --ink: #2e2226;
+  --ink-2: #6b5a60;
+  --ink-3: #9c8b90;
+  --ink-on-accent: #ffffff;
+
+  --line: rgba(58, 38, 44, 0.1);
+  --line-strong: rgba(58, 38, 44, 0.18);
+
+  --accent: #c4736e;
+  --accent-hover: #b1615d;
+  --accent-soft: #f6e3e0;
+  --accent-ring: rgba(196, 115, 110, 0.28);
+
+  --gold: #c19a45;
+  --gold-soft: #f6ecd6;
+  --sage: #7c9a81;
+  --sage-soft: #e4eee5;
+  --plum: #7d5f77;
+  --plum-soft: #efe4ed;
+  --sky: #6f8bab;
+  --sky-soft: #e3ebf3;
+
+  --shadow-sm: 0 1px 2px rgba(64, 40, 46, 0.05), 0 2px 8px rgba(64, 40, 46, 0.04);
+  --shadow: 0 2px 4px rgba(64, 40, 46, 0.05), 0 8px 24px rgba(64, 40, 46, 0.07);
+  --shadow-lg: 0 4px 12px rgba(64, 40, 46, 0.07), 0 24px 60px rgba(64, 40, 46, 0.13);
+
+  --grain-opacity: 0.035;
+}
+
+/* ------------------------------------------------------------------
+   Palette « bleu » — la même structure, repeinte.
+
+   Un seul attribut sur <html> suffit à basculer tout le site : les
+   composants ne lisent que les variables, jamais une couleur en dur.
+   ------------------------------------------------------------------ */
+
+[data-palette='bleu'],
+[data-palette='bleu'][data-theme='light'] {
+  --bg: #f5f9fc;
+  --bg-tint: #e8f1f8;
+  --surface: #ffffff;
+  --surface-2: #f4f9fd;
+  --surface-3: #e7f0f8;
+  --overlay: rgba(28, 44, 58, 0.32);
+
+  --ink: #22303c;
+  --ink-2: #5c6f7f;
+  --ink-3: #8ea0ae;
+  --ink-on-accent: #ffffff;
+
+  --line: rgba(34, 60, 82, 0.1);
+  --line-strong: rgba(34, 60, 82, 0.18);
+
+  --accent: #5f97c6;
+  --accent-hover: #4d85b4;
+  --accent-soft: #e0edf8;
+  --accent-ring: rgba(95, 151, 198, 0.3);
+
+  --gold: #d8a95c;
+  --gold-soft: #f7eeda;
+  --sage: #6fa89a;
+  --sage-soft: #e0f0ed;
+  --plum: #8189bf;
+  --plum-soft: #e8eaf7;
+  --sky: #6aa7d8;
+  --sky-soft: #e2eff9;
+
+  --shadow-sm: 0 1px 2px rgba(36, 62, 84, 0.05), 0 2px 8px rgba(36, 62, 84, 0.05);
+  --shadow: 0 2px 4px rgba(36, 62, 84, 0.05), 0 8px 24px rgba(36, 62, 84, 0.08);
+  --shadow-lg: 0 4px 12px rgba(36, 62, 84, 0.08), 0 24px 60px rgba(36, 62, 84, 0.14);
+}
+
+[data-palette='bleu'][data-theme='dark'] {
+  --bg: #0f151b;
+  --bg-tint: #141c24;
+  --surface: #182129;
+  --surface-2: #1d2831;
+  --surface-3: #25323d;
+  --overlay: rgba(4, 8, 12, 0.62);
+
+  --ink: #e8f0f6;
+  --ink-2: #a8bccb;
+  --ink-3: #79909f;
+  --ink-on-accent: #10202c;
+
+  --line: rgba(220, 238, 255, 0.1);
+  --line-strong: rgba(220, 238, 255, 0.2);
+
+  --accent: #7fb4de;
+  --accent-hover: #93c2e8;
+  --accent-soft: #1d3040;
+  --accent-ring: rgba(127, 180, 222, 0.3);
+
+  --gold: #dcb765;
+  --gold-soft: #332c1a;
+  --sage: #8fbfb2;
+  --sage-soft: #1a2b28;
+  --plum: #a3a9d8;
+  --plum-soft: #232538;
+  --sky: #8ec0e6;
+  --sky-soft: #1b2a36;
+}
+
+/* ---------------------------- Thème sombre ---------------------------- */
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #16110f;
+  --bg-tint: #1e1715;
+  --surface: #211a18;
+  --surface-2: #26201d;
+  --surface-3: #2f2724;
+  --overlay: rgba(8, 5, 6, 0.6);
+
+  --ink: #f3e9e6;
+  --ink-2: #bfaba5;
+  --ink-3: #8b7973;
+  --ink-on-accent: #241413;
+
+  --line: rgba(255, 236, 230, 0.1);
+  --line-strong: rgba(255, 236, 230, 0.2);
+
+  --accent: #e0968e;
+  --accent-hover: #eaa79f;
+  --accent-soft: #3a2523;
+  --accent-ring: rgba(224, 150, 142, 0.3);
+
+  --gold: #dcb765;
+  --gold-soft: #372d1a;
+  --sage: #9dbba2;
+  --sage-soft: #22301f;
+  --plum: #bb96b3;
+  --plum-soft: #2f2130;
+  --sky: #96b0cd;
+  --sky-soft: #1e2833;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow: 0 2px 6px rgba(0, 0, 0, 0.35), 0 10px 30px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 20px rgba(0, 0, 0, 0.4), 0 30px 70px rgba(0, 0, 0, 0.55);
+
+  --grain-opacity: 0.05;
+}

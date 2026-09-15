@@ -1,0 +1,157 @@
+/* ------------------------------------------------------------------
+   La demande — plein écran, une seule fois, à sa première connexion.
+   ------------------------------------------------------------------ */
+
+.prop {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-5);
+  background:
+    radial-gradient(130% 100% at 50% 0%, var(--accent-soft) 0%, var(--bg) 60%);
+  overflow: hidden;
+  text-align: center;
+}
+
+.prop__inner {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  z-index: 2;
+}
+
+.prop__question {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 6.5vw, 3rem);
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  font-weight: 400;
+}
+
+.prop__question--shout {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.prop__sub {
+  color: var(--ink-2);
+  font-size: var(--t-md);
+  margin-top: var(--sp-4);
+  font-family: var(--font-display);
+  font-style: italic;
+}
+
+.prop__actions {
+  display: flex;
+  gap: var(--sp-3);
+  justify-content: center;
+  align-items: center;
+  margin-top: var(--sp-7);
+  flex-wrap: wrap;
+  /* Le bouton fuyard se déplace ici : il lui faut de la place. */
+  min-height: 120px;
+  position: relative;
+}
+
+.prop__btn {
+  min-height: 52px;
+  padding: 0 var(--sp-6);
+  border-radius: var(--r-full);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--t-md);
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform var(--dur-fast) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    background var(--dur-fast) var(--ease);
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+.prop__btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.prop__btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.prop__btn--yes {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--ink-on-accent);
+  box-shadow: 0 6px 20px var(--accent-ring);
+}
+.prop__btn--yes:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 10px 30px var(--accent-ring);
+}
+
+/* Le bouton qui s'enfuit */
+.prop__btn--runaway {
+  position: relative;
+  will-change: transform;
+  touch-action: none;
+}
+
+/* Cœurs qui montent en fond */
+.prop__hearts {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+.prop__heart {
+  position: absolute;
+  color: var(--accent);
+  opacity: 0.28;
+}
+
+/* Barre de déverrouillage */
+.prop__bar {
+  height: 6px;
+  width: min(320px, 74vw);
+  margin: var(--sp-6) auto 0;
+  border-radius: var(--r-full);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.prop__bar-fill {
+  height: 100%;
+  border-radius: var(--r-full);
+  background: linear-gradient(90deg, var(--accent), var(--gold));
+}
+.prop__pct {
+  margin-top: var(--sp-3);
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.1em;
+}
+
+/* Vague de couleur */
+.prop__wave {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 55%, var(--accent-soft) 0%, transparent 70%);
+}
+
+@media (max-width: 520px) {
+  .prop__actions {
+    flex-direction: column;
+    gap: var(--sp-3);
+  }
+  .prop__btn {
+    width: 100%;
+    max-width: 280px;
+  }
+}
