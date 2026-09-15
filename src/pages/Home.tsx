@@ -8,6 +8,7 @@ import { Img, useLightbox } from '../components/ui/Img'
 import { elapsedSince, formatDate, formatDateShort, nextAnniversary, nextMilestoneDays, pad2 } from '../lib/date'
 import { sortBy } from '../lib/utils'
 import { SettingsModal } from '../components/SettingsModal'
+import { Countdown } from '../components/Countdown'
 
 export default function Home() {
   const { settings, db } = useStore()
@@ -145,6 +146,11 @@ export default function Home() {
           </div>
         </div>
       </motion.section>
+
+      {/* ------------------------------- Compte à rebours -------------------------------
+          Le héros compte depuis le premier jour ; celui-ci compte vers le
+          prochain rendez-vous. La date se change dans src/lib/rendezvous.ts. */}
+      <Countdown tick={tick} who={nameB} />
 
       {/* -------------------------------- Statistiques -------------------------------- */}
       <div className="stats">
